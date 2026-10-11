@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Request logging: every request gets an ID, returned in the `X-Request-ID`
+  header: the one nginx sends in `X-Request-ID` (see
+  `deploy/nginx.conf.example`), else a generated UUIDv7. All log lines while
+  handling a request, including errors and recovered panics, carry it, plus
+  method, path and the logged-in user. Each request is logged on completion
+  with status and duration. Static files aren't logged.
+
 ### Changed
 
 - Logging out also signs out of Pocket ID (RP-initiated logout) and returns

@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/religiosa1/dictionary/internal/auth"
+	"github.com/religiosa1/dictionary/internal/reqlog"
 	"github.com/religiosa1/dictionary/internal/store"
 	"github.com/religiosa1/dictionary/internal/web"
 )
@@ -76,7 +77,7 @@ func run() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /auth/login", func(w http.ResponseWriter, r *http.Request) {
 		if err := loginPage.Execute(w, r.URL.Query().Get("next")); err != nil {
-			slog.Error("error rendering login page", "err", err)
+			reqlog.From(r.Context()).Error("error rendering login page", "err", err)
 		}
 	})
 	mux.HandleFunc("POST /auth/login", func(w http.ResponseWriter, r *http.Request) {
@@ -88,7 +89,7 @@ func run() error {
 		}
 		user, err := db.UpsertUser("dev:"+name, name, role)
 		if err != nil {
-			slog.Error("error creating dev user", "err", err)
+			reqlog.From(r.Context()).Error("error creating dev user", "err", err)
 			http.Error(w, "error creating user", http.StatusInternalServerError)
 			return
 		}
@@ -98,7 +99,10 @@ func run() error {
 	app.Register(mux)
 
 	slog.Warn("DEV SERVER: anyone can log in as anyone", "addr", "http://"+listenAddr, "db", dbPath)
-	return http.ListenAndServe(listenAddr, http.NewCrossOriginProtection().Handler(sessions.LoadUser(mux)))
+	root := http.NewServeMux()
+	root.Handle("GET /static/", web.Static())
+	root.Handle("/", reqlog.Handler(slog.Default(), http.NewCrossOriginProtection().Handler(sessions.LoadUser(mux))))
+	return http.ListenAndServe(listenAddr, root)
 }
 
 func isLoopback(addr string) bool {

@@ -126,7 +126,9 @@ Example files in [`deploy/`](deploy):
 - `env.example`: goes to `/etc/dictionary/env`, readable by root only.
   Client and group setup in Pocket ID: [docs/pocket-id.md](docs/pocket-id.md).
 - `nginx.conf.example`: TLS reverse proxy. Keep `proxy_set_header Host $host`:
-  the CSRF protection relies on it.
+  the CSRF protection relies on it. `proxy_set_header X-Request-ID
+  $request_id` passes nginx's request ID to the app, which tags its log
+  lines with it; without it the app generates its own.
 
 ## License
 

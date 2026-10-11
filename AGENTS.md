@@ -47,3 +47,8 @@ Design and its reasoning: SPEC.md — update it when a decision changes.
 - Case folding/normalization happens in Go: SQLite's NOCASE and lower() are
   ASCII-only, they don't handle Ł or Cyrillic.
 - Timestamps are written in UTC.
+
+## Logging
+
+- Inside request handling, log with `reqlog.From(r.Context())`, not `slog`
+  directly: it tags lines with the request ID.

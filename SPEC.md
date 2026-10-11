@@ -42,6 +42,7 @@ internal/
     tags.go
     normalize.go             Polish normalization + trigram query builder
   auth/                      OIDC login/callback/logout; Sessions: session cookie, user middleware
+  reqlog/                    request ID + per-request logger middleware
   web/                       handlers, form parsing, template rendering
     templates/*.tmpl
     static/                  htmx.min.js, simple.css, app.css (tiny overrides)
@@ -51,8 +52,8 @@ deploy/
   env.example
 ```
 
-Three internal packages. `web` depends on `store` and `auth`; `auth` depends
-on `store`.
+Internal packages: `web` depends on `store`, `auth` and `reqlog`; `auth`
+depends on `store` and `reqlog`.
 
 ## 3. Configuration (env)
 
@@ -332,8 +333,17 @@ startup.
   hardening (`ProtectSystem=strict`, `ProtectHome=yes`, `NoNewPrivileges=yes`,
   `PrivateTmp=yes`).
 - `deploy/nginx.conf.example`: TLS, `proxy_pass http://127.0.0.1:8080`,
-  `proxy_set_header Host $host`, `X-Forwarded-Proto`.
+  `proxy_set_header Host $host`, `X-Forwarded-Proto`, `X-Request-ID
+  $request_id`.
 - Graceful shutdown on SIGTERM.
+- Logging: `log/slog` text to stderr (journald). `reqlog` middleware wraps
+  everything except `/static/` (nginx logs those): per request an ID and a
+  logger tagged with `request_id`, `method`, `path`, taken in handlers via
+  `reqlog.From(ctx)`; `LoadUser` adds `user` via `reqlog.Add`. The ID is
+  taken from the `X-Request-ID` request header (nginx's `$request_id`) if
+  it's up to 64 chars of `[A-Za-z0-9._-]`, else a new UUIDv7; returned as
+  `X-Request-ID`. Logs each completed request (status, duration; Error level
+  for 5xx) and recovers panics, logging the stack with the request ID.
 
 ## 11. Testing
 

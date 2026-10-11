@@ -17,6 +17,13 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        # The app tags its log lines with this ID, so they can be matched
+        # with nginx's. Always set it: it overrides one sent by the client.
+        # To have it in the access log too, add $request_id to a log_format
+        # (http context), e.g.:
+        #   log_format main '$remote_addr [$time_local] "$request" $status '
+        #                   '$body_bytes_sent rid=$request_id';
+        proxy_set_header X-Request-ID $request_id;
     }
 }
 

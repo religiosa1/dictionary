@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/religiosa1/dictionary/internal/auth"
+	"github.com/religiosa1/dictionary/internal/reqlog"
 	"github.com/religiosa1/dictionary/internal/store"
 	"github.com/religiosa1/dictionary/internal/version"
 	"github.com/religiosa1/dictionary/internal/web"
@@ -109,9 +110,13 @@ func run() error {
 	mux.HandleFunc("POST /auth/logout", authn.Logout)
 	app.Register(mux)
 
+	root := http.NewServeMux()
+	root.Handle("GET /static/", web.Static())
+	root.Handle("/", reqlog.Handler(slog.Default(), http.NewCrossOriginProtection().Handler(sessions.LoadUser(mux))))
+
 	server := &http.Server{
 		Addr:              cfg.ListenAddr,
-		Handler:           http.NewCrossOriginProtection().Handler(sessions.LoadUser(mux)),
+		Handler:           root,
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      30 * time.Second,

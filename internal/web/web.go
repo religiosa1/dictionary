@@ -7,13 +7,14 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
-	"log/slog"
+
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/religiosa1/dictionary/internal/auth"
+	"github.com/religiosa1/dictionary/internal/reqlog"
 	"github.com/religiosa1/dictionary/internal/store"
 	"github.com/religiosa1/dictionary/internal/version"
 )
@@ -42,10 +43,14 @@ func New(db *store.DB, publicRead bool) (*Server, error) {
 }
 
 // Register adds the app routes to mux.
-func (s *Server) Register(mux *http.ServeMux) {
+// Static serves the embedded assets under /static/. It's meant to be mounted
+// outside the request middleware: assets need neither sessions nor request logs.
+func Static() http.Handler {
 	static, _ := fs.Sub(staticFS, "static")
-	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(static)))
+	return http.StripPrefix("/static/", http.FileServerFS(static))
+}
 
+func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /{$}", s.requireReader(s.home))
 	mux.HandleFunc("GET /tags", s.requireReader(s.tags))
 	mux.HandleFunc("GET /phrases/{id}", s.requireReader(s.showPhrase))
@@ -152,7 +157,7 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, page
 	}
 	var buf bytes.Buffer
 	if err := s.pages[page].ExecuteTemplate(&buf, name, v); err != nil {
-		slog.Error("error rendering template", "page", page, "err", err)
+		reqlog.From(r.Context()).Error("error rendering template", "page", page, "err", err)
 		http.Error(w, "Внутренняя ошибка", http.StatusInternalServerError)
 		return
 	}
@@ -175,7 +180,7 @@ func (s *Server) renderError(w http.ResponseWriter, r *http.Request, status int,
 }
 
 func (s *Server) serverError(w http.ResponseWriter, r *http.Request, err error) {
-	slog.Error("request failed", "method", r.Method, "path", r.URL.Path, "err", err)
+	reqlog.From(r.Context()).Error("request failed", "err", err)
 	s.renderError(w, r, http.StatusInternalServerError, "Что-то пошло не так.")
 }
 

@@ -7,7 +7,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"slices"
@@ -17,6 +16,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
 
+	"github.com/religiosa1/dictionary/internal/reqlog"
 	"github.com/religiosa1/dictionary/internal/store"
 )
 
@@ -112,7 +112,7 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 
 	user, rawIDToken, err := a.exchange(r.Context(), r.URL.Query().Get("code"), flow)
 	if err != nil {
-		slog.Error("OIDC callback failed", "err", err)
+		reqlog.From(r.Context()).Error("OIDC callback failed", "err", err)
 		http.Error(w, "Не удалось войти", http.StatusBadGateway)
 		return
 	}

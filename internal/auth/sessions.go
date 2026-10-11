@@ -3,11 +3,11 @@ package auth
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/religiosa1/dictionary/internal/reqlog"
 	"github.com/religiosa1/dictionary/internal/store"
 )
 
@@ -26,16 +26,16 @@ func NewSessions(db *store.DB, secureCookies bool) *Sessions {
 // idToken is the raw OIDC ID token, empty for non-OIDC logins.
 func (s *Sessions) Start(w http.ResponseWriter, r *http.Request, user store.User, idToken, next string) {
 	if err := s.db.DeleteExpiredSessions(); err != nil {
-		slog.Error("error deleting expired sessions", "err", err)
+		reqlog.From(r.Context()).Error("error deleting expired sessions", "err", err)
 	}
 	token, err := s.db.CreateSession(user.ID, idToken, sessionTTL)
 	if err != nil {
-		slog.Error("error creating session", "err", err)
+		reqlog.From(r.Context()).Error("error creating session", "err", err)
 		http.Error(w, "Не удалось войти", http.StatusInternalServerError)
 		return
 	}
 	s.setCookie(w, sessionCookie, token, sessionTTL)
-	slog.Info("user logged in", "user", user.Name, "role", user.Role)
+	reqlog.From(r.Context()).Info("user logged in", "user", user.Name, "role", user.Role)
 	http.Redirect(w, r, safeRedirect(next), http.StatusFound)
 }
 
@@ -51,7 +51,7 @@ func (s *Sessions) End(w http.ResponseWriter, r *http.Request) (idToken string) 
 	if cookie, err := r.Cookie(sessionCookie); err == nil {
 		idToken, err = s.db.DeleteSession(cookie.Value)
 		if err != nil && !errors.Is(err, store.ErrNotFound) {
-			slog.Error("error deleting session", "err", err)
+			reqlog.From(r.Context()).Error("error deleting session", "err", err)
 		}
 	}
 	s.setCookie(w, sessionCookie, "", -1)
@@ -73,8 +73,9 @@ func (s *Sessions) LoadUser(next http.Handler) http.Handler {
 		case errors.Is(err, store.ErrNotFound):
 			// Stale cookie, treat as anonymous.
 		case err != nil:
-			slog.Error("error loading session", "err", err)
+			reqlog.From(r.Context()).Error("error loading session", "err", err)
 		default:
+			reqlog.Add(r.Context(), "user", user.Name)
 			r = r.WithContext(context.WithValue(r.Context(), userKey{}, &user))
 		}
 		next.ServeHTTP(w, r)
