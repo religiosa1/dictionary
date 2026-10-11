@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
-
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -42,14 +42,18 @@ func New(db *store.DB, publicRead bool) (*Server, error) {
 	return &Server{db: db, publicRead: publicRead, version: version.String(), pages: pages}, nil
 }
 
-// Register adds the app routes to mux.
-// Static serves the embedded assets under /static/. It's meant to be mounted
-// outside the request middleware: assets need neither sessions nor request logs.
-func Static() http.Handler {
+// Handler wraps mux, holding the app and auth routes, in the request
+// middleware. Static assets are served outside it: they need neither sessions
+// nor request logs.
+func Handler(sessions *auth.Sessions, mux *http.ServeMux) http.Handler {
 	static, _ := fs.Sub(staticFS, "static")
-	return http.StripPrefix("/static/", http.FileServerFS(static))
+	root := http.NewServeMux()
+	root.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(static)))
+	root.Handle("/", reqlog.Handler(slog.Default(), http.NewCrossOriginProtection().Handler(sessions.LoadUser(mux))))
+	return root
 }
 
+// Register adds the app routes to mux.
 func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /{$}", s.requireReader(s.home))
 	mux.HandleFunc("GET /tags", s.requireReader(s.tags))

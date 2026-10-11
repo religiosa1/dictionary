@@ -25,24 +25,19 @@ func NewSessions(db *store.DB, secureCookies bool) *Sessions {
 // Start creates a session for the user and redirects to next, if it's a local path.
 // idToken is the raw OIDC ID token, empty for non-OIDC logins.
 func (s *Sessions) Start(w http.ResponseWriter, r *http.Request, user store.User, idToken, next string) {
+	logger := reqlog.From(r.Context())
 	if err := s.db.DeleteExpiredSessions(); err != nil {
-		reqlog.From(r.Context()).Error("error deleting expired sessions", "err", err)
+		logger.Error("error deleting expired sessions", "err", err)
 	}
 	token, err := s.db.CreateSession(user.ID, idToken, sessionTTL)
 	if err != nil {
-		reqlog.From(r.Context()).Error("error creating session", "err", err)
+		logger.Error("error creating session", "err", err)
 		http.Error(w, "Не удалось войти", http.StatusInternalServerError)
 		return
 	}
 	s.setCookie(w, sessionCookie, token, sessionTTL)
-	reqlog.From(r.Context()).Info("user logged in", "user", user.Name, "role", user.Role)
+	logger.Info("user logged in", "user", user.Name, "role", user.Role)
 	http.Redirect(w, r, safeRedirect(next), http.StatusFound)
-}
-
-// Logout ends the session and redirects home; local logout only.
-func (s *Sessions) Logout(w http.ResponseWriter, r *http.Request) {
-	s.End(w, r)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 // End deletes the session and clears its cookie. Returns the session's ID
@@ -50,7 +45,7 @@ func (s *Sessions) Logout(w http.ResponseWriter, r *http.Request) {
 func (s *Sessions) End(w http.ResponseWriter, r *http.Request) (idToken string) {
 	if cookie, err := r.Cookie(sessionCookie); err == nil {
 		idToken, err = s.db.DeleteSession(cookie.Value)
-		if err != nil && !errors.Is(err, store.ErrNotFound) {
+		if err != nil {
 			reqlog.From(r.Context()).Error("error deleting session", "err", err)
 		}
 	}

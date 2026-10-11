@@ -43,12 +43,12 @@ func (db *DB) SessionUser(token string) (User, error) {
 	return user, err
 }
 
-// DeleteSession deletes the session and returns its ID token; ErrNotFound if
+// DeleteSession deletes the session and returns its ID token; empty if
 // there's no such session.
 func (db *DB) DeleteSession(token string) (idToken string, err error) {
 	err = db.Get(&idToken, `DELETE FROM sessions WHERE token_hash = ? RETURNING id_token`, hashToken(token))
 	if isNotFoundError(err) {
-		return "", ErrNotFound
+		return "", nil
 	}
 	return idToken, err
 }

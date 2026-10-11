@@ -239,8 +239,8 @@ func TestSessions(t *testing.T) {
 	if err != nil || idToken != "id-token" {
 		t.Errorf("DeleteSession = %q, %v", idToken, err)
 	}
-	if _, err := db.DeleteSession(token); !errors.Is(err, ErrNotFound) {
-		t.Errorf("expected not found on second delete, got %v", err)
+	if idToken, err := db.DeleteSession(token); idToken != "" || err != nil {
+		t.Errorf("second delete = %q, %v", idToken, err)
 	}
 	if _, err := db.SessionUser(token); !errors.Is(err, ErrNotFound) {
 		t.Errorf("expected not found after delete, got %v", err)

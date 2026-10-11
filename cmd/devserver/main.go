@@ -95,14 +95,14 @@ func run() error {
 		}
 		sessions.Start(w, r, user, "", r.PostFormValue("next"))
 	})
-	mux.HandleFunc("POST /auth/logout", sessions.Logout)
+	mux.HandleFunc("POST /auth/logout", func(w http.ResponseWriter, r *http.Request) {
+		sessions.End(w, r)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	})
 	app.Register(mux)
 
 	slog.Warn("DEV SERVER: anyone can log in as anyone", "addr", "http://"+listenAddr, "db", dbPath)
-	root := http.NewServeMux()
-	root.Handle("GET /static/", web.Static())
-	root.Handle("/", reqlog.Handler(slog.Default(), http.NewCrossOriginProtection().Handler(sessions.LoadUser(mux))))
-	return http.ListenAndServe(listenAddr, root)
+	return http.ListenAndServe(listenAddr, web.Handler(sessions, mux))
 }
 
 func isLoopback(addr string) bool {
