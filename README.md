@@ -91,12 +91,26 @@ A user's role is refreshed from their groups on each login.
 ## Deployment
 
 ```sh
-CGO_ENABLED=0 go build -o dictionary .
+CGO_ENABLED=0 go build -buildvcs=true -o dictionary .
 ```
 
-`dictionary -version` prints the build version (module pseudo-version or tag,
-commit, `+dirty` for uncommitted changes), which is also shown in the page
-footer. Build from a git checkout to get it stamped.
+`dictionary -version` prints the build version, which is also shown in the
+page footer. Go stamps it from git automatically, so:
+
+- build from a git checkout, with `git` installed, and build the package
+  (`.`), not single files; `go run` never stamps it, showing `(devel)`;
+- `-buildvcs=true` makes the build fail instead of silently omitting the
+  version when it can't be stamped.
+
+| Checkout state                         | Version                                 |
+| -------------------------------------- | --------------------------------------- |
+| HEAD exactly at tag `v0.1.0`           | `v0.1.0`                                |
+| commits after the tag                  | `v0.1.1-0.<date>-<commit>`              |
+| no tags                                | `v0.0.0-<date>-<commit>`                |
+| uncommitted changes                    | any of the above with `+dirty`          |
+
+To release: `git tag -a v0.1.0 -m v0.1.0 && git push --tags`, then build.
+Check a binary without running it: `go version -m dictionary`.
 
 Example files in [`deploy/`](deploy):
 
