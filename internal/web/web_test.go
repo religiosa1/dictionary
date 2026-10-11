@@ -188,6 +188,18 @@ func TestFiltersOpenWhenActive(t *testing.T) {
 	}
 }
 
+func TestSearchQueryTruncated(t *testing.T) {
+	app := newTestApp(t, true)
+	rec := app.get("/?q="+strings.Repeat("ł", maxPhraseLen+50), nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, strings.Repeat("ł", maxPhraseLen)) || strings.Contains(body, strings.Repeat("ł", maxPhraseLen+1)) {
+		t.Errorf("search query should be cut to %d characters", maxPhraseLen)
+	}
+}
+
 func TestValidationErrors(t *testing.T) {
 	app := newTestApp(t, false)
 	editor := app.login(t, "Ala", store.RoleEditor)

@@ -20,6 +20,9 @@ func TestSafeRedirect(t *testing.T) {
 		"//evil.example":       "/",
 		`/\evil.example`:       "/",
 		"https://evil.example": "/",
+		"/\t/evil.example":     "/",
+		"/\n/evil.example":     "/",
+		"/\r\\evil.example":    "/",
 	}
 	for in, want := range cases {
 		if got := safeRedirect(in); got != want {

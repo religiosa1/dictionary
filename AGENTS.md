@@ -13,7 +13,8 @@ Design and its reasoning: SPEC.md — update it when a decision changes.
 ## Changelog and releases
 
 - CHANGELOG.md follows Keep a Changelog 1.1.0. Every user-visible change goes
-  under `## [Unreleased]` in the same commit (Added/Changed/Fixed/Removed).
+  under `## [Unreleased]` in the same commit, sections in this order:
+  Added/Changed/Deprecated/Removed/Fixed/Security.
 - Release X.Y.Z:
   1. Move entries to `## [X.Y.Z] - YYYY-MM-DD`, leave `[Unreleased]` empty.
   2. Update compare links at the bottom.

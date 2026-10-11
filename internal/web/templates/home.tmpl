@@ -3,7 +3,7 @@
 <form action="/" method="get" class="filters"
   hx-get="/" hx-trigger="submit, input target:input delay:300ms, change target:select"
   hx-target="#results" hx-select="#results" hx-swap="outerHTML" hx-push-url="true">
-  <input type="search" name="q" value="{{.Filter.Query}}" placeholder="Поиск по-польски" lang="pl" autofocus>
+  <input type="search" name="q" value="{{.Filter.Query}}" placeholder="Поиск по-польски" lang="pl" maxlength="{{maxPhraseLen}}" autofocus>
   {{/* Collapsed on mobile only; on desktop app.css shows the content inline. */}}
   <details class="filter-selects" {{if .HasFilters}}open{{end}}>
   <summary>Фильтры</summary>

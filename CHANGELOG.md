@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-11
+
+### Fixed
+
+- Search queries are cut to 200 characters, the maximum phrase length.
+  Overly long queries made a needlessly large full-text search query.
+
+### Security
+
+- Open redirect after login: a `next` parameter with a tab or newline, e.g.
+  `/auth/login?next=%2F%09%2Fevil.example`, passed the local-path check, and
+  browsers, which strip such characters from URLs, followed it to another
+  site.
+
 ## [0.2.0] - 2026-10-11
 
 ### Added
@@ -62,7 +76,8 @@ Initial version.
 - Dev server (`cmd/devserver`) with a fake login, for local testing.
 - systemd unit, nginx and env examples; Pocket ID setup docs.
 
-[Unreleased]: https://github.com/religiosa1/dictionary/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/religiosa1/dictionary/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/religiosa1/dictionary/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/religiosa1/dictionary/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/religiosa1/dictionary/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/religiosa1/dictionary/releases/tag/v0.1.0

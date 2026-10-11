@@ -35,7 +35,7 @@ internal/
   store/                     everything SQL
     db.go                    Open(): DSN pragmas, run migrations
     migrator.go              copied Migrator (PRAGMA user_version, forward-only)
-    migrations/001_init.sql
+    migrations/*.sql         numbered, append-only
     phrases.go               CRUD, list/filter, search
     users.go                 upsert on login, list for filter dropdowns
     sessions.go
@@ -78,14 +78,14 @@ CREATE TABLE users (
   oidc_sub      TEXT NOT NULL UNIQUE,
   name          TEXT NOT NULL,
   role          TEXT NOT NULL CHECK (role IN ('reader', 'editor')),
-  created_at    TEXT NOT NULL,
-  last_login_at TEXT NOT NULL
+  created_at    DATETIME NOT NULL,
+  last_login_at DATETIME NOT NULL
 );
 
 CREATE TABLE sessions (
   token_hash TEXT PRIMARY KEY,            -- sha256(cookie token), raw token never stored
   user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  expires_at TEXT NOT NULL,
+  expires_at DATETIME NOT NULL,
   id_token   TEXT NOT NULL DEFAULT ''   -- raw OIDC ID token, for id_token_hint on logout
 );
 
@@ -95,8 +95,8 @@ CREATE TABLE phrases (
   phrase_key  TEXT NOT NULL UNIQUE,       -- Go strings.ToLower(trimmed phrase); uniqueness
   phrase_norm TEXT NOT NULL,              -- lowercase, diacritics stripped; search only
   meanings    TEXT NOT NULL CHECK (json_valid(meanings)),
-  created_at  TEXT NOT NULL,
-  updated_at  TEXT NOT NULL,
+  created_at  DATETIME NOT NULL,
+  updated_at  DATETIME NOT NULL,
   created_by  INTEGER NOT NULL REFERENCES users(id),
   updated_by  INTEGER NOT NULL REFERENCES users(id)
 );
@@ -127,7 +127,9 @@ Notes:
 - **Meanings JSON** — ordered array, at least one element:
   `[{"translation": "благодать", "examples": ["Łaska boża", "..."]}]`.
   `examples` may be empty. The first meaning's translation is the _preview_.
-- **Timestamps** — UTC RFC 3339 text, set in Go. Sorts lexicographically.
+- **Timestamps** — UTC, set in Go, written by the driver as text
+  `YYYY-MM-DD HH:MM:SS.SSS+00:00` (`_time_format=sqlite`, `_timezone=UTC`).
+  Sorts lexicographically.
 - **Why `phrase_key` / lowercased tags in Go** — SQLite's `NOCASE` and `lower()`
   are ASCII-only; they don't fold `Ł` or Cyrillic. Folding in Go is the
   simplest correct option.
@@ -167,6 +169,8 @@ FTS5 alone isn't fuzzy, so:
    `ORDER BY p.phrase_key = :key DESC, (p.phrase_norm LIKE :q || '%') DESC, phrases_fts.rank`.
    So "laska" ranks above "łaska" and vice versa.
 5. Query shorter than 3 chars ⇒ plain `phrase_norm LIKE :q || '%'`.
+6. Query is cut to 200 chars (max phrase length): each trigram is an FTS
+   term, so an unbounded query is an unbounded `OR` chain.
 
 Search combines with filters (AND). Without a query, results are ordered by
 `created_at DESC` — that's the "recently added" view.
@@ -186,7 +190,9 @@ Russian search: deferred. Would be a second FTS table fed from
   - `name` ← `name` claim, falling back to `preferred_username`;
   - `role` ← `editor` if `DICT_EDITOR_GROUP` ∈ `groups` claim, else `reader`.
     Create session, set cookie, redirect to `next` (only if it's a local path
-    starting with `/` and not `//`; else `/`).
+    starting with `/`, not `//` or `/\`, without control characters; else
+    `/`). Browsers strip tabs and newlines from URLs, so `/\t/evil` would
+    become `//evil`.
 - `POST /auth/logout` — delete session row, clear cookie, then RP-initiated
   logout: redirect to PocketID's `end_session_endpoint` (from discovery) with
   `client_id`, `id_token_hint` and `post_logout_redirect_uri` = base URL +
@@ -325,7 +331,7 @@ startup.
 
 ## 10. Deployment
 
-- Build: `CGO_ENABLED=0 go build -o dictionary .`
+- Build: `CGO_ENABLED=0 go build -buildvcs=true -o dictionary .`
 - `deploy/dictionary.service`: `DynamicUser=yes`, `StateDirectory=dictionary`,
   `EnvironmentFile=/etc/dictionary/env`, `Restart=on-failure`, standard
   hardening (`ProtectSystem=strict`, `ProtectHome=yes`, `NoNewPrivileges=yes`,

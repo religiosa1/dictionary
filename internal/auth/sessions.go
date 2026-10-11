@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -100,9 +101,12 @@ func (s *Sessions) setCookie(w http.ResponseWriter, name, value string, ttl time
 	})
 }
 
-// safeRedirect only allows local paths, preventing open redirects.
+// safeRedirect only allows local paths, preventing open redirects. Browsers
+// strip tabs and newlines from URLs ("/\t/evil" becomes "//evil"), so values
+// with control characters, which url.Parse rejects, aren't allowed either.
 func safeRedirect(next string) string {
-	if !strings.HasPrefix(next, "/") || strings.HasPrefix(next, "//") || strings.HasPrefix(next, `/\`) {
+	if _, err := url.Parse(next); err != nil ||
+		!strings.HasPrefix(next, "/") || strings.HasPrefix(next, "//") || strings.HasPrefix(next, `/\`) {
 		return "/"
 	}
 	return next

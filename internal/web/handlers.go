@@ -34,7 +34,7 @@ func (p homePage) HasFilters() bool {
 func (s *Server) home(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	filter := store.Filter{
-		Query:     query.Get("q"),
+		Query:     truncate(query.Get("q"), maxPhraseLen),
 		Tag:       query.Get("tag"),
 		CreatedBy: queryInt(query, "created_by"),
 		UpdatedBy: queryInt(query, "updated_by"),
@@ -70,6 +70,15 @@ func (s *Server) home(w http.ResponseWriter, r *http.Request) {
 func queryInt(query url.Values, key string) int64 {
 	value, _ := strconv.ParseInt(query.Get(key), 10, 64)
 	return value
+}
+
+// truncate cuts s to at most n runes. Search queries are capped, as each
+// trigram becomes a term of the FTS query, and no phrase is longer anyway.
+func truncate(s string, n int) string {
+	if runes := []rune(s); len(runes) > n {
+		return string(runes[:n])
+	}
+	return s
 }
 
 func pageURL(query url.Values, page int) string {
