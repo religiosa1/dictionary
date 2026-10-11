@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to the home page. Requires setting the client's Logout Callback URL in
   Pocket ID to `DICT_BASE_URL` + `/`, see docs/pocket-id.md. Sessions from
   before the upgrade still log out locally only.
+- Delete button on the phrase form removes the meaning in the browser,
+  without a request to the server.
 - Static files (htmx, CSS, JS) are revalidated by content hash (ETag) instead
   of being downloaded again on every page load.
 

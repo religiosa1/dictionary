@@ -8,20 +8,20 @@ pick the option with less code and fewer moving parts.
 
 ## 1. Stack
 
-| Concern        | Choice                                                                  |
-| -------------- | ----------------------------------------------------------------------- |
-| Language       | Go (current toolchain, 1.27)                                            |
-| HTTP           | stdlib `net/http` `ServeMux` with method patterns, no framework         |
-| DB             | SQLite via `modernc.org/sqlite` (pure Go, no cgo, FTS5 + JSON built in) |
-| DB access      | `jmoiron/sqlx` over hand-written SQL, no ORM                            |
-| Migrations     | `Migrator` copied from `git-webhook-receiver/internal/sqlhelpers`       |
-| Templates      | `html/template`, embedded                                               |
-| Frontend       | htmx 4 (vendored, pinned), simple.css (vendored), minimal JS (`app.js`) |
-| Auth           | OIDC (PocketID) via `coreos/go-oidc/v3` + `golang.org/x/oauth2`, PKCE   |
-| Sessions       | random token cookie, sessions table in SQLite                           |
-| CSRF           | stdlib `http.CrossOriginProtection`                                     |
-| Logging        | `log/slog`                                                              |
-| Deployment     | single static binary (`CGO_ENABLED=0`), systemd unit, behind nginx     |
+| Concern    | Choice                                                                  |
+| ---------- | ----------------------------------------------------------------------- |
+| Language   | Go (current toolchain, 1.27)                                            |
+| HTTP       | stdlib `net/http` `ServeMux` with method patterns, no framework         |
+| DB         | SQLite via `modernc.org/sqlite` (pure Go, no cgo, FTS5 + JSON built in) |
+| DB access  | `jmoiron/sqlx` over hand-written SQL, no ORM                            |
+| Migrations | `Migrator` copied from `git-webhook-receiver/internal/sqlhelpers`       |
+| Templates  | `html/template`, embedded                                               |
+| Frontend   | htmx 4 (vendored, pinned), simple.css (vendored), minimal JS (`app.js`) |
+| Auth       | OIDC (PocketID) via `coreos/go-oidc/v3` + `golang.org/x/oauth2`, PKCE   |
+| Sessions   | random token cookie, sessions table in SQLite                           |
+| CSRF       | stdlib `http.CrossOriginProtection`                                     |
+| Logging    | `log/slog`                                                              |
+| Deployment | single static binary (`CGO_ENABLED=0`), systemd unit, behind nginx      |
 
 Everything (templates, static files, SQL migrations) is embedded with
 `//go:embed`, so deployment is one binary plus an env file.
@@ -57,16 +57,16 @@ depends on `store` and `reqlog`.
 
 ## 3. Configuration (env)
 
-| Variable                  | Example / default                      | Notes                                         |
-| ------------------------- | -------------------------------------- | --------------------------------------------- |
-| `DICT_LISTEN_ADDR`        | `127.0.0.1:8080`                       |                                               |
-| `DICT_DB_PATH`            | `/var/lib/dictionary/dictionary.db`    |                                               |
-| `DICT_BASE_URL`           | `https://slownik.example.com`          | builds OIDC redirect URL; `https` ⇒ `Secure` cookies |
-| `DICT_OIDC_ISSUER`        | `https://id.example.com`               | PocketID                                      |
-| `DICT_OIDC_CLIENT_ID`     |                                        |                                               |
-| `DICT_OIDC_CLIENT_SECRET` |                                        |                                               |
-| `DICT_EDITOR_GROUP`       | `dictionary-editors`                   | PocketID group granting editor role           |
-| `DICT_PUBLIC_READ`        | `false`                                | `true` ⇒ anonymous visitors can read          |
+| Variable                  | Example / default                   | Notes                                                |
+| ------------------------- | ----------------------------------- | ---------------------------------------------------- |
+| `DICT_LISTEN_ADDR`        | `127.0.0.1:8080`                    |                                                      |
+| `DICT_DB_PATH`            | `/var/lib/dictionary/dictionary.db` |                                                      |
+| `DICT_BASE_URL`           | `https://slownik.example.com`       | builds OIDC redirect URL; `https` ⇒ `Secure` cookies |
+| `DICT_OIDC_ISSUER`        | `https://id.example.com`            | PocketID                                             |
+| `DICT_OIDC_CLIENT_ID`     |                                     |                                                      |
+| `DICT_OIDC_CLIENT_SECRET` |                                     |                                                      |
+| `DICT_EDITOR_GROUP`       | `dictionary-editors`                | PocketID group granting editor role                  |
+| `DICT_PUBLIC_READ`        | `false`                             | `true` ⇒ anonymous visitors can read                 |
 
 Missing required values ⇒ refuse to start with a clear error.
 
@@ -126,12 +126,12 @@ Notes:
 
 - **Meanings JSON** — ordered array, at least one element:
   `[{"translation": "благодать", "examples": ["Łaska boża", "..."]}]`.
-  `examples` may be empty. The first meaning's translation is the *preview*.
+  `examples` may be empty. The first meaning's translation is the _preview_.
 - **Timestamps** — UTC RFC 3339 text, set in Go. Sorts lexicographically.
 - **Why `phrase_key` / lowercased tags in Go** — SQLite's `NOCASE` and `lower()`
   are ASCII-only; they don't fold `Ł` or Cyrillic. Folding in Go is the
   simplest correct option.
-- **Uniqueness** is on `phrase_key`, *not* on `phrase_norm`: "łaska" and
+- **Uniqueness** is on `phrase_key`, _not_ on `phrase_norm`: "łaska" and
   "laska" are different words. A word with several senses is one entry with
   several meanings. Duplicate on create ⇒ form error with a link to the
   existing entry.
@@ -185,8 +185,8 @@ Russian search: deferred. Would be a second FTS table fed from
   token and nonce. Upsert user by `sub`:
   - `name` ← `name` claim, falling back to `preferred_username`;
   - `role` ← `editor` if `DICT_EDITOR_GROUP` ∈ `groups` claim, else `reader`.
-  Create session, set cookie, redirect to `next` (only if it's a local path
-  starting with `/` and not `//`; else `/`).
+    Create session, set cookie, redirect to `next` (only if it's a local path
+    starting with `/` and not `//`; else `/`).
 - `POST /auth/logout` — delete session row, clear cookie, then RP-initiated
   logout: redirect to PocketID's `end_session_endpoint` (from discovery) with
   `client_id`, `id_token_hint` and `post_logout_redirect_uri` = base URL +
@@ -225,22 +225,21 @@ modern browsers send `Sec-Fetch-Site` anyway. SameSite=Lax is a second layer.
 
 ## 7. Routes
 
-| Method | Path                       | Access | Purpose                                     |
-| ------ | -------------------------- | ------ | ------------------------------------------- |
-| GET    | `/`                        | read   | search + filters + results (recent by default) |
-| GET    | `/phrases/{id}`            | read   | phrase page                                 |
-| GET    | `/phrases/new`             | editor | create form                                 |
-| POST   | `/phrases`                 | editor | create → redirect to phrase page            |
-| GET    | `/phrases/{id}/edit`       | editor | edit form                                   |
-| POST   | `/phrases/{id}`            | editor | update → redirect to phrase page            |
-| GET    | `/phrases/{id}/delete`     | editor | confirmation page                           |
-| POST   | `/phrases/{id}/delete`     | editor | delete → redirect to `/`                    |
-| GET    | `/meaning-row`             | editor | empty meaning fieldset (htmx fragment)      |
-| DELETE | `/meaning-row`             | editor | empty 200, lets htmx remove a fieldset      |
-| GET    | `/tags`                    | read   | all tags with counts, links to `/?tag=`     |
-| GET    | `/auth/login`, `/auth/callback` | — | OIDC                                        |
-| POST   | `/auth/logout`             | —      | RP-initiated logout                         |
-| GET    | `/static/...`              | —      | embedded assets; content-hash ETag, `no-cache` |
+| Method | Path                            | Access | Purpose                                        |
+| ------ | ------------------------------- | ------ | ---------------------------------------------- |
+| GET    | `/`                             | read   | search + filters + results (recent by default) |
+| GET    | `/phrases/{id}`                 | read   | phrase page                                    |
+| GET    | `/phrases/new`                  | editor | create form                                    |
+| POST   | `/phrases`                      | editor | create → redirect to phrase page               |
+| GET    | `/phrases/{id}/edit`            | editor | edit form                                      |
+| POST   | `/phrases/{id}`                 | editor | update → redirect to phrase page               |
+| GET    | `/phrases/{id}/delete`          | editor | confirmation page                              |
+| POST   | `/phrases/{id}/delete`          | editor | delete → redirect to `/`                       |
+| GET    | `/meaning-row`                  | editor | empty meaning fieldset (htmx fragment)         |
+| GET    | `/tags`                         | read   | all tags with counts, links to `/?tag=`        |
+| GET    | `/auth/login`, `/auth/callback` | —      | OIDC                                           |
+| POST   | `/auth/logout`                  | —      | RP-initiated logout                            |
+| GET    | `/static/...`                   | —      | embedded assets; content-hash ETag, `no-cache` |
 
 Only GET/POST, so every form works without JS. Writes use
 POST-redirect-GET.
@@ -267,23 +266,22 @@ what part of the response to swap. No `HX-Request` branching in handlers.
 - **Live search**: the filter form is a plain `GET /` form with a submit
   button. htmx attributes on it:
   `hx-get="/" hx-trigger="submit, input target:input delay:300ms, change target:select"
-  hx-select="#results" hx-target="#results" hx-swap="outerHTML"
-  hx-push-url="true"` — server renders the whole page, htmx picks out the
+hx-select="#results" hx-target="#results" hx-swap="outerHTML"
+hx-push-url="true"` — server renders the whole page, htmx picks out the
   results block. Rendering a full page per keystroke is negligible at this
   scale.
 - **Meanings editor**: each meaning is a `<fieldset>` with one
   `translation` input and one `examples` textarea (one example per line).
   The handler zips `r.Form["translation"]` and `r.Form["examples"]` by
   position — no indexed field names.
-  - "Добавить значение": `hx-get="/meaning-row" hx-target="#meanings"
-    hx-swap="beforeend"`. Only fragment endpoint in the app (renders the
+  - "Add meaning": `hx-get="/meaning-row" hx-target="#meanings"
+hx-swap="beforeend"`. Only fragment endpoint in the app (renders the
     `meaning-row` template).
     A blank fieldset is rendered only when there are no meanings yet (new
     phrase); otherwise the blank one is inside `<noscript>`, for no-JS users.
-  - "Удалить значение": `hx-delete="/meaning-row" hx-target="closest fieldset"
-    hx-swap="delete"`; the endpoint returns an empty 200 (htmx skips swaps
-    on 204). Without JS: clear the fields; fieldsets with empty translation
-    are dropped on save.
+  - "Remove meaning": `static/app.js` removes the fieldset client-side.
+    Without JS: clear the fields; fieldsets with empty translation are
+    dropped on save.
 - **Tags input**: single text input, comma-separated, with existing tags
   listed below as a hint. (`<datalist>` was dropped: it completes the whole
   input value, so it doesn't work for comma-separated lists.)
@@ -334,7 +332,7 @@ startup.
   `PrivateTmp=yes`).
 - `deploy/nginx.conf.example`: TLS, `proxy_pass http://127.0.0.1:8080`,
   `proxy_set_header Host $host`, `X-Forwarded-Proto`, `X-Request-ID
-  $request_id`.
+$request_id`.
 - Graceful shutdown on SIGTERM.
 - Logging: `log/slog` text to stderr (journald). `reqlog` middleware wraps
   everything except `/static/` (nginx logs those): per request an ID and a

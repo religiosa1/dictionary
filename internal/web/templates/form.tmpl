@@ -45,7 +45,7 @@
     <textarea name="examples" rows="2">{{lines .Examples}}</textarea>
   </label>
   {{/* Without JS, clearing the fields removes the meaning on save. */}}
-  <button type="button" class="remove" hx-delete="/meaning-row" hx-target="closest fieldset" hx-swap="delete">Удалить значение</button>
+  <button type="button" class="remove">Удалить значение</button>
 </fieldset>
 {{end}}
 

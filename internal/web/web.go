@@ -96,7 +96,6 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /phrases/{id}/delete", s.requireEditor(s.confirmDelete))
 	mux.HandleFunc("POST /phrases/{id}/delete", s.requireEditor(s.deletePhrase))
 	mux.HandleFunc("GET /meaning-row", s.requireEditor(s.meaningRow))
-	mux.HandleFunc("DELETE /meaning-row", s.requireEditor(removeMeaningRow))
 	mux.HandleFunc("/", s.notFound)
 }
 

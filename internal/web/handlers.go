@@ -197,13 +197,6 @@ func (s *Server) meaningRow(w http.ResponseWriter, r *http.Request) {
 	s.render(w, r, http.StatusOK, "form", "meaning-row", store.Meaning{})
 }
 
-// removeMeaningRow pairs with meaningRow: the button swaps its fieldset out
-// with an empty response. Nothing is stored server-side until the form is saved.
-// Status must be 200: htmx doesn't swap 204 responses.
-func removeMeaningRow(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-}
-
 func (s *Server) confirmDelete(w http.ResponseWriter, r *http.Request) {
 	if phrase, ok := s.loadPhrase(w, r); ok {
 		s.renderPage(w, r, http.StatusOK, "delete", phrase)

@@ -25,9 +25,9 @@ Design and its reasoning: SPEC.md — update it when a decision changes.
 ## Frontend
 
 - Server always renders full pages; htmx picks parts with `hx-select`.
-  Only fragment endpoints: `GET`/`DELETE /meaning-row`.
+  Only fragment endpoint: `GET /meaning-row`.
 - Everything must work without JS (progressive enhancement); htmx and
-  `static/app.js` only improve it. JS stays minimal, delegated on `document`
+  `static/app.js` only improve it. JS listeners are delegated on `document`
   (htmx swaps the body, so per-element listeners get lost).
 - htmx 4 gotchas: inheritance is explicit (`hx-boost:inherited`); 4xx/5xx
   are swapped; 204 is NOT swapped (return empty 200 instead); fetch can't

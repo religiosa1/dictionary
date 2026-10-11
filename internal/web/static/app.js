@@ -1,3 +1,9 @@
+// "Удалить значение" removes its meaning fieldset; nothing is stored until
+// the form is saved.
+document.addEventListener("click", (event) => {
+  event.target.closest(".meaning .remove")?.closest("fieldset").remove();
+});
+
 // Clicking a suggested tag on the phrase form appends it to the tags input,
 // unless it's already there. Delegated on document, so it keeps working after
 // htmx swaps the page.
