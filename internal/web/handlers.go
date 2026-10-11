@@ -22,8 +22,13 @@ type homePage struct {
 
 // IsRecent tells whether it's the default "recently added" view.
 func (p homePage) IsRecent() bool {
+	return p.Filter.Query == "" && !p.HasFilters()
+}
+
+// HasFilters tells whether any of the select filters is set.
+func (p homePage) HasFilters() bool {
 	f := p.Filter
-	return f.Query == "" && f.Tag == "" && f.CreatedBy == 0 && f.UpdatedBy == 0
+	return f.Tag != "" || f.CreatedBy != 0 || f.UpdatedBy != 0
 }
 
 func (s *Server) home(w http.ResponseWriter, r *http.Request) {

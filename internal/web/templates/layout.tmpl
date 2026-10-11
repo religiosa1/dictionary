@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/static/simple.min.css">
   <link rel="stylesheet" href="/static/app.css">
   <script src="/static/htmx.min.js"></script>
+  <script src="/static/app.js" defer></script>
 </head>
 <body hx-boost:inherited="true">
   <header>
@@ -14,6 +15,8 @@
       <a href="/">Словарь</a>
       <a href="/tags">Теги</a>
       {{if .CanEdit}}<a href="/phrases/new">Добавить</a>{{end}}
+      {{/* One flex item, so on narrow screens it wraps to the next row as a whole. */}}
+      <span class="auth">
       {{if .User}}
         <form method="post" action="/auth/logout" class="logout">
           <span>{{.User.Name}}</span>
@@ -23,6 +26,7 @@
         {{/* Not boosted: login redirects to the identity provider, which fetch() can't follow. */}}
         <a href="/auth/login?next={{.CurrentURL}}" hx-boost="false">Войти</a>
       {{end}}
+      </span>
     </nav>
   </header>
   <main>

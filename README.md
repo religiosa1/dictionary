@@ -15,8 +15,10 @@ phrases with their Russian meanings, to look them up and memorize them.
 > **Early stage.** This is a first iteration, built for a single family's
 > use. Expect breaking changes, including to the database schema.
 
+Changes are listed in [CHANGELOG.md](CHANGELOG.md).
+
 Built to stay small: Go stdlib HTTP, SQLite (pure-Go driver, FTS5),
-`html/template`, htmx 4 with no hand-written JS. Everything is embedded into
+`html/template`, htmx 4 and a few lines of plain JS. Everything is embedded into
 a single binary. See [SPEC.md](SPEC.md) for the design and its reasoning.
 
 ## Running locally

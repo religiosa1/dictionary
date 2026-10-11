@@ -183,6 +183,16 @@ func TestEditFormHasNoBlankMeaning(t *testing.T) {
 	}
 }
 
+func TestFiltersOpenWhenActive(t *testing.T) {
+	app := newTestApp(t, true)
+	if body := app.get("/", nil).Body.String(); strings.Contains(body, `class="filter-selects" open`) {
+		t.Errorf("filters should be collapsed without active filters")
+	}
+	if body := app.get("/?tag=x", nil).Body.String(); !strings.Contains(body, `class="filter-selects" open`) {
+		t.Errorf("filters should be open with an active filter")
+	}
+}
+
 func TestValidationErrors(t *testing.T) {
 	app := newTestApp(t, false)
 	editor := app.login(t, "Ala", store.RoleEditor)

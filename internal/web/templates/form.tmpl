@@ -25,7 +25,9 @@
   <label for="tags">Теги, через запятую</label>
   <input id="tags" name="tags" value="{{.Tags}}">
   {{if .AllTags}}
-  <p class="hint">Существующие: {{range $i, $tag := .AllTags}}{{if $i}}, {{end}}{{$tag.Name}}{{end}}</p>
+  <p class="hint">Существующие:
+    {{range .AllTags}}<button type="button" class="tag-suggestion" data-tag="{{.Name}}">{{.Name}}</button>{{end}}
+  </p>
   {{end}}
 
   <p>

@@ -16,7 +16,7 @@ pick the option with less code and fewer moving parts.
 | DB access      | `jmoiron/sqlx` over hand-written SQL, no ORM                            |
 | Migrations     | `Migrator` copied from `git-webhook-receiver/internal/sqlhelpers`       |
 | Templates      | `html/template`, embedded                                               |
-| Frontend       | htmx 4 (vendored, pinned), simple.css (vendored), no hand-written JS    |
+| Frontend       | htmx 4 (vendored, pinned), simple.css (vendored), minimal JS (`app.js`) |
 | Auth           | OIDC (PocketID) via `coreos/go-oidc/v3` + `golang.org/x/oauth2`, PKCE   |
 | Sessions       | random token cookie, sessions table in SQLite                           |
 | CSRF           | stdlib `http.CrossOriginProtection`                                     |

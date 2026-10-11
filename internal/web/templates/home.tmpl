@@ -4,6 +4,9 @@
   hx-get="/" hx-trigger="submit, input target:input delay:300ms, change target:select"
   hx-target="#results" hx-select="#results" hx-swap="outerHTML" hx-push-url="true">
   <input type="search" name="q" value="{{.Filter.Query}}" placeholder="Поиск по-польски" lang="pl" autofocus>
+  {{/* Collapsed on mobile only; on desktop app.css shows the content inline. */}}
+  <details class="filter-selects" {{if .HasFilters}}open{{end}}>
+  <summary>Фильтры</summary>
   <select name="tag" aria-label="Тег">
     <option value="">Все теги</option>
     {{range .Tags}}<option value="{{.Name}}" {{if eq .Name $.Page.Filter.Tag}}selected{{end}}>{{.Name}}</option>{{end}}
@@ -16,6 +19,7 @@
     <option value="">Изменил: все</option>
     {{range .Users}}<option value="{{.ID}}" {{if eq .ID $.Page.Filter.UpdatedBy}}selected{{end}}>Изменил: {{.Name}}</option>{{end}}
   </select>
+  </details>
   <button type="submit">Найти</button>
 </form>
 {{end}}
