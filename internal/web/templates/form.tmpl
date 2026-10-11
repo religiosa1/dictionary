@@ -1,0 +1,45 @@
+{{define "title"}}{{if .Page.ID}}Изменить{{else}}Добавить{{end}} — Словарь{{end}}
+{{define "content"}}
+{{with .Page}}
+<h1>{{if .ID}}Изменить «{{.Phrase}}»{{else}}Новая фраза{{end}}</h1>
+{{if .Errors}}
+<div class="errors" role="alert">
+  <ul>{{range .Errors}}<li>{{.}}</li>{{end}}</ul>
+  {{with .DuplicateID}}<p><a href="/phrases/{{.}}">Открыть существующую запись</a></p>{{end}}
+</div>
+{{end}}
+<form method="post" action="{{if .ID}}/phrases/{{.ID}}{{else}}/phrases{{end}}">
+  <label for="phrase">Фраза</label>
+  <input id="phrase" name="phrase" value="{{.Phrase}}" lang="pl" required maxlength="200" autofocus>
+
+  <p class="hint">Значения. Чтобы удалить значение, очистите его поля.</p>
+  <div id="meanings">
+    {{range .WithEmptyMeaning}}{{template "meaning" .}}{{end}}
+  </div>
+  <button type="button" hx-get="/meaning-row" hx-target="#meanings" hx-swap="beforeend">+ Значение</button>
+
+  <label for="tags">Теги, через запятую</label>
+  <input id="tags" name="tags" value="{{.Tags}}">
+  {{if .AllTags}}
+  <p class="hint">Существующие: {{range $i, $tag := .AllTags}}{{if $i}}, {{end}}{{$tag.Name}}{{end}}</p>
+  {{end}}
+
+  <p>
+    <button type="submit">Сохранить</button>
+    <a href="{{if .ID}}/phrases/{{.ID}}{{else}}/{{end}}">Отмена</a>
+  </p>
+</form>
+{{end}}
+{{end}}
+
+{{define "meaning"}}
+<fieldset class="meaning">
+  <label>Перевод <input name="translation" value="{{.Translation}}" maxlength="500"></label>
+  <label>Примеры, по одному на строку
+    <textarea name="examples" rows="2">{{lines .Examples}}</textarea>
+  </label>
+</fieldset>
+{{end}}
+
+{{/* Fragment for the "+ Значение" button. */}}
+{{define "meaning-row"}}{{template "meaning" .Page}}{{end}}

@@ -1,0 +1,11 @@
+{{define "title"}}Теги — Словарь{{end}}
+{{define "content"}}
+<h1>Теги</h1>
+{{if .Page}}
+<ul>
+  {{range .Page}}<li><a href="/?tag={{.Name}}">{{.Name}}</a> ({{.Count}})</li>{{end}}
+</ul>
+{{else}}
+<p>Тегов пока нет.</p>
+{{end}}
+{{end}}

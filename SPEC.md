@@ -159,8 +159,10 @@ FTS5 alone isn't fuzzy, so:
 3. **Query**: split the normalized query into overlapping trigrams and OR them:
    `"psz" OR "szc" OR "zcz" OR ...` (each quoted, `"` doubled).
    Typos break only a few trigrams, so the right entry still ranks high.
-4. **Rank**: exact-prefix matches first, then `bm25`:
-   `ORDER BY (p.phrase_norm LIKE :q || '%') DESC, bm25(phrases_fts)`.
+4. **Rank**: exact match (diacritics included) first, then prefix matches,
+   then `bm25`:
+   `ORDER BY p.phrase_key = :key DESC, (p.phrase_norm LIKE :q || '%') DESC, phrases_fts.rank`.
+   So "laska" ranks above "łaska" and vice versa.
 5. Query shorter than 3 chars ⇒ plain `phrase_norm LIKE :q || '%'`.
 
 Search combines with filters (AND). Without a query, results are ordered by
@@ -192,7 +194,7 @@ user's next login (or when their session expires).
 
 ### Sessions
 
-Cookie `session`: 32 random bytes, base64url; HttpOnly, SameSite=Lax,
+Cookie `session`: `crypto/rand.Text()` (≥128 bits); HttpOnly, SameSite=Lax,
 `Secure` when base URL is https, 30-day fixed lifetime. DB stores the
 sha256 hash. Expired sessions are purged on startup and on each login.
 
@@ -244,11 +246,16 @@ POST-redirect-GET.
 Guiding idea: **the server always renders full pages**; htmx only decides
 what part of the response to swap. No `HX-Request` branching in handlers.
 
-- `<body hx-boost="true">` — links and forms become AJAX navigations with
-  history, falling back to normal navigation without JS.
+- `<body hx-boost:inherited="true">` — links and forms become AJAX
+  navigations with history, falling back to normal navigation without JS.
+  (htmx 4 inheritance is explicit, hence `:inherited`.) The login link has
+  `hx-boost="false"`: fetch() can't follow a redirect to PocketID. For the
+  same reason, auth redirects on htmx requests use the `HX-Redirect` header.
+- htmx 4 swaps 4xx/5xx responses by default, so validation errors (422/409)
+  and error pages render without extra config.
 - **Live search**: the filter form is a plain `GET /` form with a submit
   button. htmx attributes on it:
-  `hx-get="/" hx-trigger="input changed delay:300ms, change"
+  `hx-get="/" hx-trigger="submit, input target:input delay:300ms, change target:select"
   hx-select="#results" hx-target="#results" hx-swap="outerHTML"
   hx-push-url="true"` — server renders the whole page, htmx picks out the
   results block. Rendering a full page per keystroke is negligible at this
@@ -258,17 +265,17 @@ what part of the response to swap. No `HX-Request` branching in handlers.
   The handler zips `r.Form["translation"]` and `r.Form["examples"]` by
   position — no indexed field names.
   - "Добавить значение": `hx-get="/meaning-row" hx-target="#meanings"
-    hx-swap="beforeend"`. Only fragment endpoint in the app.
+    hx-swap="beforeend"`. Only fragment endpoint in the app (renders the
+    `meaning-row` template).
     Without JS: the form always renders one extra empty fieldset.
   - Removing a meaning: clear its fields; fieldsets with empty translation
     are dropped on save. (No remove button in v1.)
-- **Tags input**: single text input, comma-separated, with a `<datalist>`
-  of existing tags for autocomplete.
+- **Tags input**: single text input, comma-separated, with existing tags
+  listed below as a hint. (`<datalist>` was dropped: it completes the whole
+  input value, so it doesn't work for comma-separated lists.)
 - **Delete**: separate confirmation page with a POST form. Works the same
   with or without JS.
-- **htmx 4**: pin exact version and vendor it; verify attribute semantics
-  (`hx-select`, inheritance rules, `hx-boost` history) against the htmx 4
-  docs during implementation.
+- **htmx 4.0.0**, vendored at `internal/web/static/htmx.min.js`.
 
 ### Pages
 

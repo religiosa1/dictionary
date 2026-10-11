@@ -1,0 +1,15 @@
+/* Small additions on top of simple.css. */
+.filters { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.filters input[type="search"] { flex: 1 1 100%; }
+.filters select, .filters button { margin: 0; }
+.phrases { list-style: none; padding: 0; }
+.phrases li { padding: 0.4rem 0; border-bottom: 1px solid var(--border); }
+.tag { font-size: 0.8em; margin-left: 0.4em; padding: 0 0.4em; border: 1px solid var(--border); border-radius: 4px; text-decoration: none; }
+.examples { font-style: italic; color: var(--text-light); }
+.meta, .hint { color: var(--text-light); font-size: 0.9em; }
+.meaning label { display: block; }
+.meaning input, .meaning textarea { width: 100%; }
+.errors { border: 1px solid #c33; border-radius: 4px; padding: 0 1rem; }
+.pager { display: flex; justify-content: space-between; margin-top: 1rem; }
+header nav .logout { display: inline; margin: 0; }
+header nav .logout button { margin: 0 0 0 0.5rem; padding: 0.2rem 0.6rem; }

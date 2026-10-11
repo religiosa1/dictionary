@@ -1,0 +1,9 @@
+{{define "title"}}Удалить — Словарь{{end}}
+{{define "content"}}
+<h1>Удалить «<span lang="pl">{{.Page.Phrase}}</span>»?</h1>
+<p>Запись будет удалена безвозвратно.</p>
+<form method="post" action="/phrases/{{.Page.ID}}/delete">
+  <button type="submit">Удалить</button>
+  <a href="/phrases/{{.Page.ID}}">Отмена</a>
+</form>
+{{end}}

@@ -1,0 +1,35 @@
+{{define "title"}}{{.Page.Phrase}} — Словарь{{end}}
+{{define "content"}}
+{{with .Page}}
+<article>
+  <h1 lang="pl">{{.Phrase}}</h1>
+  <ol>
+    {{range .Meanings}}
+    <li>
+      {{.Translation}}
+      {{if .Examples}}
+      <ul class="examples">
+        {{range .Examples}}<li>{{.}}</li>{{end}}
+      </ul>
+      {{end}}
+    </li>
+    {{end}}
+  </ol>
+  {{if .Tags}}
+  <p>{{range .Tags}}<a class="tag" href="/?tag={{.}}">{{.}}</a>{{end}}</p>
+  {{end}}
+  <p class="meta">
+    Добавил <a href="/?created_by={{.CreatedBy}}">{{.CreatedByName}}</a>, {{date .CreatedAt}}
+    {{if not (.UpdatedAt.Equal .CreatedAt)}}
+    · изменил <a href="/?updated_by={{.UpdatedBy}}">{{.UpdatedByName}}</a>, {{date .UpdatedAt}}
+    {{end}}
+  </p>
+</article>
+{{end}}
+{{if .CanEdit}}
+<p>
+  <a class="button" href="/phrases/{{.Page.ID}}/edit">Изменить</a>
+  <a class="button" href="/phrases/{{.Page.ID}}/delete">Удалить</a>
+</p>
+{{end}}
+{{end}}

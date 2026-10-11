@@ -1,0 +1,4 @@
+/dictionary
+*.db
+*.db-shm
+*.db-wal

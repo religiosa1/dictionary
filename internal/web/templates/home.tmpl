@@ -1,0 +1,47 @@
+{{define "content"}}
+{{with .Page}}
+<form action="/" method="get" class="filters"
+  hx-get="/" hx-trigger="submit, input target:input delay:300ms, change target:select"
+  hx-target="#results" hx-select="#results" hx-swap="outerHTML" hx-push-url="true">
+  <input type="search" name="q" value="{{.Filter.Query}}" placeholder="Поиск по-польски" lang="pl" autofocus>
+  <select name="tag" aria-label="Тег">
+    <option value="">Все теги</option>
+    {{range .Tags}}<option value="{{.Name}}" {{if eq .Name $.Page.Filter.Tag}}selected{{end}}>{{.Name}}</option>{{end}}
+  </select>
+  <select name="created_by" aria-label="Добавил">
+    <option value="">Добавил: все</option>
+    {{range .Users}}<option value="{{.ID}}" {{if eq .ID $.Page.Filter.CreatedBy}}selected{{end}}>Добавил: {{.Name}}</option>{{end}}
+  </select>
+  <select name="updated_by" aria-label="Изменил">
+    <option value="">Изменил: все</option>
+    {{range .Users}}<option value="{{.ID}}" {{if eq .ID $.Page.Filter.UpdatedBy}}selected{{end}}>Изменил: {{.Name}}</option>{{end}}
+  </select>
+  <button type="submit">Найти</button>
+</form>
+{{end}}
+{{template "results" .Page}}
+{{end}}
+
+{{define "results"}}
+<section id="results">
+  <h2>{{if .IsRecent}}Недавно добавленные{{else}}Результаты{{end}}</h2>
+  {{if .Phrases}}
+  <ul class="phrases">
+    {{range .Phrases}}
+    <li>
+      <a href="/phrases/{{.ID}}"><b lang="pl">{{.Phrase}}</b></a> — {{.Preview}}
+      {{range .Tags}}<a class="tag" href="/?tag={{.}}">{{.}}</a>{{end}}
+    </li>
+    {{end}}
+  </ul>
+  {{else}}
+  <p>Ничего не найдено.</p>
+  {{end}}
+  {{if or .PrevURL .NextURL}}
+  <nav class="pager">
+    {{with .PrevURL}}<a href="{{.}}">← Назад</a>{{end}}
+    {{with .NextURL}}<a href="{{.}}">Далее →</a>{{end}}
+  </nav>
+  {{end}}
+</section>
+{{end}}
