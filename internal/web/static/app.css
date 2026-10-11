@@ -9,6 +9,12 @@
 .meta, .hint { color: var(--text-light); font-size: 0.9em; }
 .meaning label { display: block; }
 .meaning input, .meaning textarea { width: 100%; }
+.meaning .remove { margin: 0; padding: 0.2rem 0.6rem; font-size: 0.9em; }
+
+/* Tighter header than simple.css defaults. */
+body > header { padding: 0 0.5rem 0.5rem; }
+body > header > :only-child { margin-block-start: 0.5rem; }
+header nav { padding: 0.5rem 0 0; }
 .errors { border: 1px solid #c33; border-radius: 4px; padding: 0 1rem; }
 .pager { display: flex; justify-content: space-between; margin-top: 1rem; }
 header nav .logout { display: inline; margin: 0; }

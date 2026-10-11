@@ -228,6 +228,7 @@ modern browsers send `Sec-Fetch-Site` anyway. SameSite=Lax is a second layer.
 | GET    | `/phrases/{id}/delete`     | editor | confirmation page                           |
 | POST   | `/phrases/{id}/delete`     | editor | delete → redirect to `/`                    |
 | GET    | `/meaning-row`             | editor | empty meaning fieldset (htmx fragment)      |
+| DELETE | `/meaning-row`             | editor | empty 200, lets htmx remove a fieldset      |
 | GET    | `/tags`                    | read   | all tags with counts, links to `/?tag=`     |
 | GET    | `/auth/login`, `/auth/callback` | — | OIDC                                        |
 | POST   | `/auth/logout`             | —      |                                             |
@@ -269,8 +270,10 @@ what part of the response to swap. No `HX-Request` branching in handlers.
     hx-swap="beforeend"`. Only fragment endpoint in the app (renders the
     `meaning-row` template).
     Without JS: the form always renders one extra empty fieldset.
-  - Removing a meaning: clear its fields; fieldsets with empty translation
-    are dropped on save. (No remove button in v1.)
+  - "Удалить значение": `hx-delete="/meaning-row" hx-target="closest fieldset"
+    hx-swap="delete"`; the endpoint returns an empty 200 (htmx skips swaps
+    on 204). Without JS: clear the fields; fieldsets with empty translation
+    are dropped on save.
 - **Tags input**: single text input, comma-separated, with existing tags
   listed below as a hint. (`<datalist>` was dropped: it completes the whole
   input value, so it doesn't work for comma-separated lists.)

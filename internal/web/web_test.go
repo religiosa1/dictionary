@@ -123,6 +123,11 @@ func TestEditorFlow(t *testing.T) {
 		t.Errorf("meaning row: got %d: %s", rec.Code, rec.Body)
 	}
 
+	rec = app.do(httptest.NewRequest(http.MethodDelete, "/meaning-row", nil), editor)
+	if rec.Code != http.StatusOK || rec.Body.Len() != 0 {
+		t.Errorf("remove meaning row: got %d: %s", rec.Code, rec.Body)
+	}
+
 	rec = app.post("/phrases", phraseValues("Pszczoła", "пчела", ""), editor)
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("create: got %d: %s", rec.Code, rec.Body)

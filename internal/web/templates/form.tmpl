@@ -12,7 +12,8 @@
   <label for="phrase">Фраза</label>
   <input id="phrase" name="phrase" value="{{.Phrase}}" lang="pl" required maxlength="200" autofocus>
 
-  <p class="hint">Значения. Чтобы удалить значение, очистите его поля.</p>
+  <p>Значения</p>
+  <p class="hint">Чтобы удалить значение, нажмите «Удалить значение» или просто очистите его поля.</p>
   <div id="meanings">
     {{range .WithEmptyMeaning}}{{template "meaning" .}}{{end}}
   </div>
@@ -38,6 +39,8 @@
   <label>Примеры, по одному на строку
     <textarea name="examples" rows="2">{{lines .Examples}}</textarea>
   </label>
+  {{/* Without JS, clearing the fields removes the meaning on save. */}}
+  <button type="button" class="remove" hx-delete="/meaning-row" hx-target="closest fieldset" hx-swap="delete">Удалить значение</button>
 </fieldset>
 {{end}}
 
