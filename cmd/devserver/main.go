@@ -92,7 +92,7 @@ func run() error {
 			http.Error(w, "error creating user", http.StatusInternalServerError)
 			return
 		}
-		sessions.Start(w, r, user, r.PostFormValue("next"))
+		sessions.Start(w, r, user, "", r.PostFormValue("next"))
 	})
 	mux.HandleFunc("POST /auth/logout", sessions.Logout)
 	app.Register(mux)

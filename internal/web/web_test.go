@@ -42,7 +42,7 @@ func (a testApp) login(t *testing.T, name string, role store.Role) *http.Cookie 
 	if err != nil {
 		t.Fatal(err)
 	}
-	token, err := a.db.CreateSession(user.ID, time.Hour)
+	token, err := a.db.CreateSession(user.ID, "", time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -226,7 +226,7 @@ func TestSessions(t *testing.T) {
 	db := newTestDB(t)
 	user := newTestUser(t, db, "alice")
 
-	token, err := db.CreateSession(user.ID, time.Hour)
+	token, err := db.CreateSession(user.ID, "id-token", time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -235,14 +235,18 @@ func TestSessions(t *testing.T) {
 		t.Errorf("SessionUser = %+v, %v", got, err)
 	}
 
-	if err := db.DeleteSession(token); err != nil {
-		t.Fatal(err)
+	idToken, err := db.DeleteSession(token)
+	if err != nil || idToken != "id-token" {
+		t.Errorf("DeleteSession = %q, %v", idToken, err)
+	}
+	if _, err := db.DeleteSession(token); !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected not found on second delete, got %v", err)
 	}
 	if _, err := db.SessionUser(token); !errors.Is(err, ErrNotFound) {
 		t.Errorf("expected not found after delete, got %v", err)
 	}
 
-	expired, _ := db.CreateSession(user.ID, -time.Minute)
+	expired, _ := db.CreateSession(user.ID, "", -time.Minute)
 	if _, err := db.SessionUser(expired); !errors.Is(err, ErrNotFound) {
 		t.Errorf("expected expired session to be rejected, got %v", err)
 	}

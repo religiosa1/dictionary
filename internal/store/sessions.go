@@ -14,12 +14,13 @@ func hashToken(token string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// CreateSession returns a new random session token for the user.
-func (db *DB) CreateSession(userID int64, ttl time.Duration) (string, error) {
+// CreateSession returns a new random session token for the user. idToken is
+// the raw OIDC ID token, kept for logout; empty for non-OIDC logins.
+func (db *DB) CreateSession(userID int64, idToken string, ttl time.Duration) (string, error) {
 	token := rand.Text()
 	_, err := db.Exec(
-		`INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)`,
-		hashToken(token), userID, time.Now().UTC().Add(ttl),
+		`INSERT INTO sessions (token_hash, user_id, id_token, expires_at) VALUES (?, ?, ?, ?)`,
+		hashToken(token), userID, idToken, time.Now().UTC().Add(ttl),
 	)
 	if err != nil {
 		return "", err
@@ -42,9 +43,14 @@ func (db *DB) SessionUser(token string) (User, error) {
 	return user, err
 }
 
-func (db *DB) DeleteSession(token string) error {
-	_, err := db.Exec(`DELETE FROM sessions WHERE token_hash = ?`, hashToken(token))
-	return err
+// DeleteSession deletes the session and returns its ID token; ErrNotFound if
+// there's no such session.
+func (db *DB) DeleteSession(token string) (idToken string, err error) {
+	err = db.Get(&idToken, `DELETE FROM sessions WHERE token_hash = ? RETURNING id_token`, hashToken(token))
+	if isNotFoundError(err) {
+		return "", ErrNotFound
+	}
+	return idToken, err
 }
 
 func (db *DB) DeleteExpiredSessions() error {

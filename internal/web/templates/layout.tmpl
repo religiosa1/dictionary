@@ -18,7 +18,8 @@
       {{/* One flex item, so on narrow screens it wraps to the next row as a whole. */}}
       <span class="auth">
       {{if .User}}
-        <form method="post" action="/auth/logout" class="logout">
+        {{/* Not boosted: logout redirects to the identity provider, which fetch() can't follow. */}}
+        <form method="post" action="/auth/logout" class="logout" hx-boost="false">
           <span>{{.User.Name}}</span>
           <button type="submit">Выйти</button>
         </form>

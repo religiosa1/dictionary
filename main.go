@@ -106,7 +106,7 @@ func run() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /auth/login", authn.Login)
 	mux.HandleFunc("GET /auth/callback", authn.Callback)
-	mux.HandleFunc("POST /auth/logout", sessions.Logout)
+	mux.HandleFunc("POST /auth/logout", authn.Logout)
 	app.Register(mux)
 
 	server := &http.Server{

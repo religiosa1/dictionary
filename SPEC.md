@@ -41,7 +41,7 @@ internal/
     sessions.go
     tags.go
     normalize.go             Polish normalization + trigram query builder
-  auth/                      OIDC login/callback; Sessions: session cookie, logout, user middleware
+  auth/                      OIDC login/callback/logout; Sessions: session cookie, user middleware
   web/                       handlers, form parsing, template rendering
     templates/*.tmpl
     static/                  htmx.min.js, simple.css, app.css (tiny overrides)
@@ -84,7 +84,8 @@ CREATE TABLE users (
 CREATE TABLE sessions (
   token_hash TEXT PRIMARY KEY,            -- sha256(cookie token), raw token never stored
   user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  expires_at TEXT NOT NULL
+  expires_at TEXT NOT NULL,
+  id_token   TEXT NOT NULL DEFAULT ''   -- raw OIDC ID token, for id_token_hint on logout
 );
 
 CREATE TABLE phrases (
@@ -185,7 +186,13 @@ Russian search: deferred. Would be a second FTS table fed from
   - `role` ← `editor` if `DICT_EDITOR_GROUP` ∈ `groups` claim, else `reader`.
   Create session, set cookie, redirect to `next` (only if it's a local path
   starting with `/` and not `//`; else `/`).
-- `POST /auth/logout` — delete session row, clear cookie. Local logout only.
+- `POST /auth/logout` — delete session row, clear cookie, then RP-initiated
+  logout: redirect to PocketID's `end_session_endpoint` (from discovery) with
+  `client_id`, `id_token_hint` and `post_logout_redirect_uri` = base URL +
+  `/`. PocketID ends its own login and redirects back home. Without a stored
+  ID token PocketID would ask to confirm, so such sessions log out locally
+  only. Other apps using PocketID keep their sessions (no back-channel
+  logout).
 
 Who may log in at all is controlled in PocketID (allowed groups on the OIDC
 client). The app trusts anyone PocketID lets through as at least a reader.
@@ -231,7 +238,7 @@ modern browsers send `Sec-Fetch-Site` anyway. SameSite=Lax is a second layer.
 | DELETE | `/meaning-row`             | editor | empty 200, lets htmx remove a fieldset      |
 | GET    | `/tags`                    | read   | all tags with counts, links to `/?tag=`     |
 | GET    | `/auth/login`, `/auth/callback` | — | OIDC                                        |
-| POST   | `/auth/logout`             | —      |                                             |
+| POST   | `/auth/logout`             | —      | RP-initiated logout                         |
 | GET    | `/static/...`              | —      | embedded assets                             |
 
 Only GET/POST, so every form works without JS. Writes use
@@ -250,8 +257,9 @@ what part of the response to swap. No `HX-Request` branching in handlers.
 
 - `<body hx-boost:inherited="true">` — links and forms become AJAX
   navigations with history, falling back to normal navigation without JS.
-  (htmx 4 inheritance is explicit, hence `:inherited`.) The login link has
-  `hx-boost="false"`: fetch() can't follow a redirect to PocketID. For the
+  (htmx 4 inheritance is explicit, hence `:inherited`.) The login link and
+  the logout form have `hx-boost="false"`: fetch() can't follow a redirect
+  to PocketID. For the
   same reason, auth redirects on htmx requests use the `HX-Redirect` header.
 - htmx 4 swaps 4xx/5xx responses by default, so validation errors (422/409)
   and error pages render without extra config.
@@ -347,7 +355,8 @@ startup.
 - Russian search (FTS on meanings).
 - Backups (e.g. nightly `VACUUM INTO` systemd timer).
 - Revision history, admin UI, JSON API, multi-tag filter, i18n.
-- RP-initiated logout at PocketID.
+- Back-channel logout: PocketID notifying the app when a user is disabled
+  or loses group access, to drop their sessions before they expire.
 - Fragment responses: render only the `results` block when
   `HX-Request-Type: partial` (drop `hx-select`, keep `hx-target`), and send
   `Vary: HX-Request-Type`. Saves ~1 KB gzipped per search request.

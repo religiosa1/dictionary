@@ -8,8 +8,9 @@ phrases with their Russian meanings, to look them up and memorize them.
 - Home page shows recently added entries, fuzzy search on Polish phrases
   (diacritic-insensitive and typo-tolerant), filters by tag, author and
   last editor.
-- Login via OIDC (PocketID). Roles come from PocketID groups: editors can
-  change everything, everyone else is a reader.
+- Login via OIDC (PocketID), logout signs out of PocketID too. Roles come
+  from PocketID groups: editors can change everything, everyone else is a
+  reader.
 - UI is in Russian.
 
 > **Early stage.** This is a first iteration, built for a single family's
@@ -51,7 +52,8 @@ See [docs/pocket-id.md](docs/pocket-id.md) for all client and group
 settings.
 
 1. Create an OIDC client in PocketID with callback URL
-   `http://localhost:8080/auth/callback`.
+   `http://localhost:8080/auth/callback` and logout callback URL
+   `http://localhost:8080/`.
 2. Create a group for editors (default name `dictionary-editors`) and add
    yourself to it.
 3. Run:
