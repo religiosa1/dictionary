@@ -15,7 +15,10 @@
   <p>Значения</p>
   <p class="hint">Чтобы удалить значение, нажмите «Удалить значение» или просто очистите его поля.</p>
   <div id="meanings">
-    {{range .WithEmptyMeaning}}{{template "meaning" .}}{{end}}
+    {{range .MeaningRows}}{{template "meaning" .}}{{end}}
+    {{/* Without JS, the "+" button doesn't work: offer a blank row instead.
+         On htmx swaps this is parsed into hidden, blank inputs, which saving ignores. */}}
+    {{if .Meanings}}<noscript>{{template "meaning" .BlankMeaning}}</noscript>{{end}}
   </div>
   <button type="button" hx-get="/meaning-row" hx-target="#meanings" hx-swap="beforeend">+ Значение</button>
 

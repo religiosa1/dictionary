@@ -36,10 +36,17 @@ func formFromPhrase(phrase store.Phrase) phraseForm {
 	}
 }
 
-// WithEmptyMeaning returns meanings plus one blank row, so a new meaning can
-// be added even without JS.
-func (f phraseForm) WithEmptyMeaning() []store.Meaning {
-	return append(slices.Clone(f.Meanings), store.Meaning{})
+// MeaningRows returns the meanings to render, with a single blank row when
+// there are none (e.g. a new phrase). More rows come from the "+" button.
+func (f phraseForm) MeaningRows() []store.Meaning {
+	if len(f.Meanings) == 0 {
+		return []store.Meaning{{}}
+	}
+	return f.Meanings
+}
+
+func (f phraseForm) BlankMeaning() store.Meaning {
+	return store.Meaning{}
 }
 
 // parsePhraseForm reads and validates the form. Translations and examples

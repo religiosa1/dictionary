@@ -269,7 +269,8 @@ what part of the response to swap. No `HX-Request` branching in handlers.
   - "Добавить значение": `hx-get="/meaning-row" hx-target="#meanings"
     hx-swap="beforeend"`. Only fragment endpoint in the app (renders the
     `meaning-row` template).
-    Without JS: the form always renders one extra empty fieldset.
+    A blank fieldset is rendered only when there are no meanings yet (new
+    phrase); otherwise the blank one is inside `<noscript>`, for no-JS users.
   - "Удалить значение": `hx-delete="/meaning-row" hx-target="closest fieldset"
     hx-swap="delete"`; the endpoint returns an empty 200 (htmx skips swaps
     on 204). Without JS: clear the fields; fieldsets with empty translation

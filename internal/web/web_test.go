@@ -168,6 +168,21 @@ func TestEditorFlow(t *testing.T) {
 	}
 }
 
+func TestEditFormHasNoBlankMeaning(t *testing.T) {
+	app := newTestApp(t, false)
+	editor := app.login(t, "Ala", store.RoleEditor)
+
+	if body := app.get("/phrases/new", editor).Body.String(); strings.Count(body, `name="translation"`) != 1 {
+		t.Errorf("new form should have one blank meaning")
+	}
+	location := app.post("/phrases", phraseValues("kot", "кот", "котик"), editor).Header().Get("Location")
+	body := app.get(location+"/edit", editor).Body.String()
+	// 2 meanings + a blank row inside <noscript>.
+	if got := strings.Count(body, `name="translation"`); got != 3 || !strings.Contains(body, "<noscript>") {
+		t.Errorf("edit form has %d meaning rows, want 2 and a <noscript> one", got)
+	}
+}
+
 func TestValidationErrors(t *testing.T) {
 	app := newTestApp(t, false)
 	editor := app.login(t, "Ala", store.RoleEditor)
