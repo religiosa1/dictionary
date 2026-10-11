@@ -1,6 +1,7 @@
 package store
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
@@ -174,9 +175,10 @@ func (db *DB) ListPhrases(filter Filter, pageSize int) ([]Phrase, bool, error) {
 	return phrases, hasMore, nil
 }
 
+var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+
 func likePrefix(s string) string {
-	escaper := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
-	return escaper.Replace(s) + "%"
+	return likeEscaper.Replace(s) + "%"
 }
 
 func (db *DB) CreatePhrase(in PhraseInput, userID int64) (int64, error) {
@@ -204,20 +206,15 @@ func (db *DB) CreatePhrase(in PhraseInput, userID int64) (int64, error) {
 
 func (db *DB) UpdatePhrase(id int64, in PhraseInput, userID int64) error {
 	err := db.inTx(func(tx *sqlx.Tx) error {
-		result, err := tx.Exec(`
+		err := requireAffected(tx.Exec(`
 			UPDATE phrases SET phrase = ?, phrase_key = ?, phrase_norm = ?, meanings = ?,
 				updated_at = ?, updated_by = ?
 			WHERE id = ?`,
 			in.Phrase, Key(in.Phrase), Normalize(in.Phrase), in.Meanings,
 			time.Now().UTC(), userID, id,
-		)
+		))
 		if err != nil {
 			return err
-		}
-		if affected, err := result.RowsAffected(); err != nil {
-			return err
-		} else if affected == 0 {
-			return ErrNotFound
 		}
 		return setTags(tx, id, in.Tags)
 	})
@@ -229,17 +226,26 @@ func (db *DB) UpdatePhrase(id int64, in PhraseInput, userID int64) error {
 
 func (db *DB) DeletePhrase(id int64) error {
 	return db.inTx(func(tx *sqlx.Tx) error {
-		result, err := tx.Exec(`DELETE FROM phrases WHERE id = ?`, id)
-		if err != nil {
+		if err := requireAffected(tx.Exec(`DELETE FROM phrases WHERE id = ?`, id)); err != nil {
 			return err
-		}
-		if affected, err := result.RowsAffected(); err != nil {
-			return err
-		} else if affected == 0 {
-			return ErrNotFound
 		}
 		return pruneTags(tx)
 	})
+}
+
+// requireAffected turns an update or delete that matched no rows into ErrNotFound.
+func requireAffected(result sql.Result, err error) error {
+	if err != nil {
+		return err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 func (db *DB) inTx(fn func(tx *sqlx.Tx) error) (err error) {

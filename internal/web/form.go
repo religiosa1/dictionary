@@ -112,11 +112,11 @@ func splitLines(text string) []string {
 	return lines
 }
 
-// parseTags splits a comma-separated list into lowercase unique tags.
+// parseTags splits a comma-separated list into unique tags, folded like phrase keys.
 func parseTags(text string) []string {
 	var tags []string
 	for tag := range strings.SplitSeq(text, ",") {
-		tag = strings.Join(strings.Fields(strings.ToLower(tag)), " ")
+		tag = store.Key(tag)
 		if tag != "" && !slices.Contains(tags, tag) {
 			tags = append(tags, tag)
 		}

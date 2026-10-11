@@ -3,7 +3,9 @@ package web
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"embed"
+	"encoding/hex"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -46,11 +48,40 @@ func New(db *store.DB, publicRead bool) (*Server, error) {
 // middleware. Static assets are served outside it: they need neither sessions
 // nor request logs.
 func Handler(sessions *auth.Sessions, mux *http.ServeMux) http.Handler {
-	static, _ := fs.Sub(staticFS, "static")
 	root := http.NewServeMux()
-	root.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(static)))
+	root.Handle("GET /static/", http.StripPrefix("/static/", staticHandler()))
 	root.Handle("/", reqlog.Handler(slog.Default(), http.NewCrossOriginProtection().Handler(sessions.LoadUser(mux))))
 	return root
+}
+
+// staticHandler serves the embedded assets with content-hash ETags. Embedded
+// files have no modification time, so without an ETag browsers can't
+// revalidate and re-download every asset on each page load.
+func staticHandler() http.Handler {
+	static, _ := fs.Sub(staticFS, "static")
+	etags := map[string]string{}
+	// Embedded files are always readable, so a walk error can't happen.
+	_ = fs.WalkDir(static, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		data, err := fs.ReadFile(static, path)
+		if err != nil {
+			return err
+		}
+		sum := sha256.Sum256(data)
+		etags[path] = `"` + hex.EncodeToString(sum[:8]) + `"`
+		return nil
+	})
+	files := http.FileServerFS(static)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if etag, ok := etags[r.URL.Path]; ok {
+			w.Header().Set("ETag", etag)
+			// Revalidate each time: cheap 304s, and a new release shows up at once.
+			w.Header().Set("Cache-Control", "no-cache")
+		}
+		files.ServeHTTP(w, r)
+	})
 }
 
 // Register adds the app routes to mux.
@@ -122,7 +153,9 @@ func parseTemplates() (map[string]*template.Template, error) {
 	funcs := template.FuncMap{
 		"date":  func(t time.Time) string { return t.Local().Format("02.01.2006") },
 		"lines": func(lines []string) string { return strings.Join(lines, "\n") },
-		"inc":   func(i int) int { return i + 1 },
+		// Form limits, so the HTML maxlength matches server validation.
+		"maxPhraseLen":      func() int { return maxPhraseLen },
+		"maxTranslationLen": func() int { return maxTranslationLen },
 	}
 	layout, err := template.New("").Funcs(funcs).ParseFS(templatesFS, "templates/layout.tmpl")
 	if err != nil {

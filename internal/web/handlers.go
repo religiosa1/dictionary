@@ -90,21 +90,35 @@ func (s *Server) tags(w http.ResponseWriter, r *http.Request) {
 // loadPhrase fetches the phrase from the {id} path value, rendering 404 or
 // 500 on failure.
 func (s *Server) loadPhrase(w http.ResponseWriter, r *http.Request) (store.Phrase, bool) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		s.notFound(w, r)
+	id, ok := s.pathID(w, r)
+	if !ok {
 		return store.Phrase{}, false
 	}
 	phrase, err := s.db.GetPhrase(id)
-	if errors.Is(err, store.ErrNotFound) {
-		s.notFound(w, r)
-		return phrase, false
-	}
 	if err != nil {
-		s.serverError(w, r, err)
+		s.dbError(w, r, err)
 		return phrase, false
 	}
 	return phrase, true
+}
+
+// pathID parses the {id} path value, rendering 404 if it's not a number.
+func (s *Server) pathID(w http.ResponseWriter, r *http.Request) (int64, bool) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		s.notFound(w, r)
+		return 0, false
+	}
+	return id, true
+}
+
+// dbError renders 404 for store.ErrNotFound, 500 for anything else.
+func (s *Server) dbError(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, store.ErrNotFound) {
+		s.notFound(w, r)
+		return
+	}
+	s.serverError(w, r, err)
 }
 
 func (s *Server) showPhrase(w http.ResponseWriter, r *http.Request) {
@@ -137,9 +151,8 @@ func (s *Server) createPhrase(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) updatePhrase(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		s.notFound(w, r)
+	id, ok := s.pathID(w, r)
+	if !ok {
 		return
 	}
 	form, input := parsePhraseForm(r)
@@ -148,7 +161,7 @@ func (s *Server) updatePhrase(w http.ResponseWriter, r *http.Request) {
 		s.renderForm(w, r, http.StatusUnprocessableEntity, form)
 		return
 	}
-	err = s.db.UpdatePhrase(id, input, auth.UserFrom(r.Context()).ID)
+	err := s.db.UpdatePhrase(id, input, auth.UserFrom(r.Context()).ID)
 	if s.handleSaveError(w, r, form, err) {
 		return
 	}
@@ -164,10 +177,8 @@ func (s *Server) handleSaveError(w http.ResponseWriter, r *http.Request, form ph
 		form.DuplicateID, _ = s.db.PhraseIDByText(form.Phrase)
 		form.Errors = append(form.Errors, "Такая фраза уже есть в словаре.")
 		s.renderForm(w, r, http.StatusConflict, form)
-	case errors.Is(err, store.ErrNotFound):
-		s.notFound(w, r)
 	default:
-		s.serverError(w, r, err)
+		s.dbError(w, r, err)
 	}
 	return true
 }
@@ -200,18 +211,12 @@ func (s *Server) confirmDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) deletePhrase(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		s.notFound(w, r)
+	id, ok := s.pathID(w, r)
+	if !ok {
 		return
 	}
-	err = s.db.DeletePhrase(id)
-	if errors.Is(err, store.ErrNotFound) {
-		s.notFound(w, r)
-		return
-	}
-	if err != nil {
-		s.serverError(w, r, err)
+	if err := s.db.DeletePhrase(id); err != nil {
+		s.dbError(w, r, err)
 		return
 	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)

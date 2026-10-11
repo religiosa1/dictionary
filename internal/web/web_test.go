@@ -246,3 +246,17 @@ func TestParsePhraseForm(t *testing.T) {
 		t.Errorf("bad tags: %q", got)
 	}
 }
+
+func TestStaticRevalidates(t *testing.T) {
+	app := newTestApp(t, false)
+	first := app.get("/static/app.css", nil)
+	etag := first.Header().Get("ETag")
+	if first.Code != http.StatusOK || etag == "" {
+		t.Fatalf("status %d, ETag %q", first.Code, etag)
+	}
+	req := httptest.NewRequest(http.MethodGet, "/static/app.css", nil)
+	req.Header.Set("If-None-Match", etag)
+	if rec := app.do(req, nil); rec.Code != http.StatusNotModified {
+		t.Errorf("revalidation status = %d, want 304", rec.Code)
+	}
+}

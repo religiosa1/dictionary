@@ -56,7 +56,13 @@ func main() {
 func run() error {
 	listenAddr := cmp.Or(os.Getenv("DICT_LISTEN_ADDR"), "127.0.0.1:8080")
 	dbPath := cmp.Or(os.Getenv("DICT_DB_PATH"), "dev.db")
-	publicRead, _ := strconv.ParseBool(os.Getenv("DICT_PUBLIC_READ"))
+	var publicRead bool
+	if value := os.Getenv("DICT_PUBLIC_READ"); value != "" {
+		var err error
+		if publicRead, err = strconv.ParseBool(value); err != nil {
+			return fmt.Errorf("invalid DICT_PUBLIC_READ: %w", err)
+		}
+	}
 
 	if !isLoopback(listenAddr) {
 		return fmt.Errorf("devserver only listens on loopback, got %q", listenAddr)

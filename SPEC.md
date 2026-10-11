@@ -240,7 +240,7 @@ modern browsers send `Sec-Fetch-Site` anyway. SameSite=Lax is a second layer.
 | GET    | `/tags`                    | read   | all tags with counts, links to `/?tag=`     |
 | GET    | `/auth/login`, `/auth/callback` | — | OIDC                                        |
 | POST   | `/auth/logout`             | —      | RP-initiated logout                         |
-| GET    | `/static/...`              | —      | embedded assets                             |
+| GET    | `/static/...`              | —      | embedded assets; content-hash ETag, `no-cache` |
 
 Only GET/POST, so every form works without JS. Writes use
 POST-redirect-GET.

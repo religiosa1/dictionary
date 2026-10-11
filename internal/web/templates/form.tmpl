@@ -10,7 +10,7 @@
 {{end}}
 <form method="post" action="{{if .ID}}/phrases/{{.ID}}{{else}}/phrases{{end}}">
   <label for="phrase">Фраза</label>
-  <input id="phrase" name="phrase" value="{{.Phrase}}" lang="pl" required maxlength="200" autofocus>
+  <input id="phrase" name="phrase" value="{{.Phrase}}" lang="pl" required maxlength="{{maxPhraseLen}}" autofocus>
 
   <p>Значения</p>
   <p class="hint">Чтобы удалить значение, нажмите «Удалить значение» или просто очистите его поля.</p>
@@ -40,7 +40,7 @@
 
 {{define "meaning"}}
 <fieldset class="meaning">
-  <label>Перевод <input name="translation" value="{{.Translation}}" maxlength="500"></label>
+  <label>Перевод <input name="translation" value="{{.Translation}}" maxlength="{{maxTranslationLen}}"></label>
   <label>Примеры, по одному на строку
     <textarea name="examples" rows="2">{{lines .Examples}}</textarea>
   </label>

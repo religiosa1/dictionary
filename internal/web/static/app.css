@@ -14,10 +14,9 @@
 /* Tighter header than simple.css defaults. */
 body > header { padding: 0 0.5rem 0.5rem; }
 body > header > :only-child { margin-block-start: 0.5rem; }
-header nav { padding: 0.5rem 0 0; }
 .errors { border: 1px solid #c33; border-radius: 4px; padding: 0 1rem; }
 .pager { display: flex; justify-content: space-between; margin-top: 1rem; }
-header nav { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; }
+header nav { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; padding: 0.5rem 0 0; }
 header nav .auth { margin: 0 0.5rem 1rem; }
 /* Name and button may still break apart when the name is too long for the row. */
 header nav .logout { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.25rem 0.5rem; margin: 0; }
