@@ -19,3 +19,7 @@ header nav { padding: 0.5rem 0 0; }
 .pager { display: flex; justify-content: space-between; margin-top: 1rem; }
 header nav .logout { display: inline; margin: 0; }
 header nav .logout button { margin: 0 0 0 0.5rem; padding: 0.2rem 0.6rem; }
+
+/* Tighter footer than simple.css defaults. */
+body > footer { margin-top: 0.5rem; padding: 0.5rem 1rem; }
+body > footer p { margin-block: 0; }

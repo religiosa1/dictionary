@@ -94,6 +94,10 @@ A user's role is refreshed from their groups on each login.
 CGO_ENABLED=0 go build -o dictionary .
 ```
 
+`dictionary -version` prints the build version (module pseudo-version or tag,
+commit, `+dirty` for uncommitted changes), which is also shown in the page
+footer. Build from a git checkout to get it stamped.
+
 Example files in [`deploy/`](deploy):
 
 - `dictionary.service`: systemd unit; the database lives in

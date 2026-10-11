@@ -15,6 +15,7 @@ import (
 
 	"github.com/religiosa1/dictionary/internal/auth"
 	"github.com/religiosa1/dictionary/internal/store"
+	"github.com/religiosa1/dictionary/internal/version"
 )
 
 //go:embed templates/*.tmpl
@@ -28,6 +29,7 @@ const pageSize = 30
 type Server struct {
 	db         *store.DB
 	publicRead bool
+	version    string
 	pages      map[string]*template.Template
 }
 
@@ -36,7 +38,7 @@ func New(db *store.DB, publicRead bool) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Server{db: db, publicRead: publicRead, pages: pages}, nil
+	return &Server{db: db, publicRead: publicRead, version: version.String(), pages: pages}, nil
 }
 
 // Register adds the app routes to mux.
@@ -103,6 +105,7 @@ type view struct {
 	User       *store.User
 	CanEdit    bool
 	CurrentURL string
+	Version    string
 	Page       any
 }
 
@@ -144,6 +147,7 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, page
 		User:       user,
 		CanEdit:    user.IsEditor(),
 		CurrentURL: r.URL.RequestURI(),
+		Version:    s.version,
 		Page:       data,
 	}
 	var buf bytes.Buffer

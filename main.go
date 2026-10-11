@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/religiosa1/dictionary/internal/auth"
 	"github.com/religiosa1/dictionary/internal/store"
+	"github.com/religiosa1/dictionary/internal/version"
 	"github.com/religiosa1/dictionary/internal/web"
 )
 
@@ -61,6 +63,15 @@ func loadConfig() (config, error) {
 }
 
 func main() {
+	var showVersion bool
+	flag.BoolVar(&showVersion, "version", false, "show version information and exit")
+	flag.BoolVar(&showVersion, "v", false, "shorthand for -version")
+	flag.Parse()
+	if showVersion {
+		fmt.Println(version.String())
+		return
+	}
+
 	if err := run(); err != nil {
 		slog.Error("fatal error", "err", err)
 		os.Exit(1)
@@ -109,7 +120,7 @@ func run() error {
 
 	serveErr := make(chan error, 1)
 	go func() {
-		slog.Info("listening", "addr", cfg.ListenAddr, "publicRead", cfg.PublicRead)
+		slog.Info("listening", "addr", cfg.ListenAddr, "publicRead", cfg.PublicRead, "version", version.String())
 		serveErr <- server.ListenAndServe()
 	}()
 
