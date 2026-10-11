@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -81,7 +82,8 @@ func run() error {
 	}
 	defer func() { _ = db.Close() }()
 
-	authn, err := auth.New(ctx, cfg.Auth, db)
+	sessions := auth.NewSessions(db, strings.HasPrefix(cfg.Auth.BaseURL, "https://"))
+	authn, err := auth.New(ctx, cfg.Auth, db, sessions)
 	if err != nil {
 		return err
 	}
@@ -93,12 +95,12 @@ func run() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /auth/login", authn.Login)
 	mux.HandleFunc("GET /auth/callback", authn.Callback)
-	mux.HandleFunc("POST /auth/logout", authn.Logout)
+	mux.HandleFunc("POST /auth/logout", sessions.Logout)
 	app.Register(mux)
 
 	server := &http.Server{
 		Addr:              cfg.ListenAddr,
-		Handler:           http.NewCrossOriginProtection().Handler(auth.LoadUser(db)(mux)),
+		Handler:           http.NewCrossOriginProtection().Handler(sessions.LoadUser(mux)),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      30 * time.Second,

@@ -30,6 +30,7 @@ Everything (templates, static files, SQL migrations) is embedded with
 
 ```
 main.go                      config from env, wiring, http.Server, graceful shutdown
+cmd/devserver/               local server with a fake login page instead of OIDC
 internal/
   store/                     everything SQL
     db.go                    Open(): DSN pragmas, run migrations
@@ -40,7 +41,7 @@ internal/
     sessions.go
     tags.go
     normalize.go             Polish normalization + trigram query builder
-  auth/                      OIDC login/callback/logout, session middleware, role checks
+  auth/                      OIDC login/callback; Sessions: session cookie, logout, user middleware
   web/                       handlers, form parsing, template rendering
     templates/*.tmpl
     static/                  htmx.min.js, simple.css, app.css (tiny overrides)
@@ -329,6 +330,10 @@ startup.
 - `normalize`: table tests (diacritics, trigrams, quoting).
 - `web`: `httptest` for the permission matrix and form parsing; OIDC
   bypassed by inserting a session directly.
+- Manual testing: `go run ./cmd/devserver`. It wires the same app with a
+  login page that signs in as any name/role. Session handling (`auth.Sessions`)
+  is separate from the OIDC flow (`auth.Auth`), so both logins share it.
+  Loopback-only, and not part of the production build.
 
 ## 12. Deferred / out of scope
 

@@ -32,7 +32,7 @@ func newTestApp(t *testing.T, publicRead bool) testApp {
 	}
 	mux := http.NewServeMux()
 	server.Register(mux)
-	return testApp{db: db, handler: http.NewCrossOriginProtection().Handler(auth.LoadUser(db)(mux))}
+	return testApp{db: db, handler: http.NewCrossOriginProtection().Handler(auth.NewSessions(db, false).LoadUser(mux))}
 }
 
 // login creates a user with a session and returns its cookie.

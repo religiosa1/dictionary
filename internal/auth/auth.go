@@ -35,23 +35,25 @@ type Config struct {
 	EditorGroup  string
 }
 
+// Auth is the OIDC login flow; sessions are handed over to Sessions.
 type Auth struct {
-	db            *store.DB
-	oauth         oauth2.Config
-	verifier      *oidc.IDTokenVerifier
-	editorGroup   string
-	secureCookies bool
+	db          *store.DB
+	sessions    *Sessions
+	oauth       oauth2.Config
+	verifier    *oidc.IDTokenVerifier
+	editorGroup string
 }
 
 // New discovers the OIDC provider, so the issuer must be reachable on startup.
-func New(ctx context.Context, cfg Config, db *store.DB) (*Auth, error) {
+func New(ctx context.Context, cfg Config, db *store.DB, sessions *Sessions) (*Auth, error) {
 	provider, err := oidc.NewProvider(ctx, cfg.Issuer)
 	if err != nil {
 		return nil, fmt.Errorf("error discovering OIDC provider: %w", err)
 	}
 	baseURL := strings.TrimSuffix(cfg.BaseURL, "/")
 	return &Auth{
-		db: db,
+		db:       db,
+		sessions: sessions,
 		oauth: oauth2.Config{
 			ClientID:     cfg.ClientID,
 			ClientSecret: cfg.ClientSecret,
@@ -59,9 +61,8 @@ func New(ctx context.Context, cfg Config, db *store.DB) (*Auth, error) {
 			RedirectURL:  baseURL + "/auth/callback",
 			Scopes:       []string{oidc.ScopeOpenID, "profile", "groups"},
 		},
-		verifier:      provider.Verifier(&oidc.Config{ClientID: cfg.ClientID}),
-		editorGroup:   cfg.EditorGroup,
-		secureCookies: strings.HasPrefix(baseURL, "https://"),
+		verifier:    provider.Verifier(&oidc.Config{ClientID: cfg.ClientID}),
+		editorGroup: cfg.EditorGroup,
 	}, nil
 }
 
@@ -77,7 +78,7 @@ func (a *Auth) Login(w http.ResponseWriter, r *http.Request) {
 		"verifier": {verifier},
 		"next":     {safeRedirect(r.URL.Query().Get("next"))},
 	}
-	a.setCookie(w, loginCookie, flow.Encode(), loginTTL)
+	a.sessions.setCookie(w, loginCookie, flow.Encode(), loginTTL)
 	authURL := a.oauth.AuthCodeURL(state, oauth2.S256ChallengeOption(verifier), oidc.Nonce(nonce))
 	http.Redirect(w, r, authURL, http.StatusFound)
 }
@@ -88,7 +89,7 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Сессия входа истекла, попробуйте ещё раз", http.StatusBadRequest)
 		return
 	}
-	a.setCookie(w, loginCookie, "", -1)
+	a.sessions.setCookie(w, loginCookie, "", -1)
 	flow, err := url.ParseQuery(cookie.Value)
 	if err != nil || flow.Get("state") == "" || flow.Get("state") != r.URL.Query().Get("state") {
 		http.Error(w, "Неверный параметр state", http.StatusBadRequest)
@@ -105,18 +106,7 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Не удалось войти", http.StatusBadGateway)
 		return
 	}
-	if err := a.db.DeleteExpiredSessions(); err != nil {
-		slog.Error("error deleting expired sessions", "err", err)
-	}
-	token, err := a.db.CreateSession(user.ID, sessionTTL)
-	if err != nil {
-		slog.Error("error creating session", "err", err)
-		http.Error(w, "Не удалось войти", http.StatusInternalServerError)
-		return
-	}
-	a.setCookie(w, sessionCookie, token, sessionTTL)
-	slog.Info("user logged in", "user", user.Name, "role", user.Role)
-	http.Redirect(w, r, safeRedirect(flow.Get("next")), http.StatusFound)
+	a.sessions.Start(w, r, user, flow.Get("next"))
 }
 
 // exchange trades the authorization code for an ID token and upserts the user
@@ -152,39 +142,4 @@ func (a *Auth) exchange(ctx context.Context, code string, flow url.Values) (stor
 		role = store.RoleEditor
 	}
 	return a.db.UpsertUser(idToken.Subject, name, role)
-}
-
-func (a *Auth) Logout(w http.ResponseWriter, r *http.Request) {
-	if cookie, err := r.Cookie(sessionCookie); err == nil {
-		if err := a.db.DeleteSession(cookie.Value); err != nil {
-			slog.Error("error deleting session", "err", err)
-		}
-	}
-	a.setCookie(w, sessionCookie, "", -1)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
-}
-
-// setCookie sets an auth cookie; negative ttl deletes it.
-func (a *Auth) setCookie(w http.ResponseWriter, name, value string, ttl time.Duration) {
-	maxAge := int(ttl.Seconds())
-	if ttl < 0 {
-		maxAge = -1
-	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     name,
-		Value:    value,
-		Path:     "/",
-		MaxAge:   maxAge,
-		HttpOnly: true,
-		Secure:   a.secureCookies,
-		SameSite: http.SameSiteLaxMode,
-	})
-}
-
-// safeRedirect only allows local paths, preventing open redirects.
-func safeRedirect(next string) string {
-	if !strings.HasPrefix(next, "/") || strings.HasPrefix(next, "//") || strings.HasPrefix(next, `/\`) {
-		return "/"
-	}
-	return next
 }
