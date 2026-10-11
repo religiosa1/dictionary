@@ -45,6 +45,9 @@ can reach it can log in as anyone.
 
 ### Real server with PocketID
 
+See [docs/pocket-id.md](docs/pocket-id.md) for all client and group
+settings.
+
 1. Create an OIDC client in PocketID with callback URL
    `http://localhost:8080/auth/callback`.
 2. Create a group for editors (default name `dictionary-editors`) and add
@@ -117,6 +120,7 @@ Example files in [`deploy/`](deploy):
 - `dictionary.service`: systemd unit; the database lives in
   `/var/lib/dictionary`.
 - `env.example`: goes to `/etc/dictionary/env`, readable by root only.
+  Client and group setup in Pocket ID: [docs/pocket-id.md](docs/pocket-id.md).
 - `nginx.conf.example`: TLS reverse proxy. Keep `proxy_set_header Host $host`:
   the CSRF protection relies on it.
 

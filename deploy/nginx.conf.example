@@ -1,5 +1,7 @@
 server {
     listen 443 ssl;
+    # "http2 on;" needs nginx 1.25.1+. On older versions (e.g. 1.24 on
+    # Ubuntu 24.04) drop it and use "listen 443 ssl http2;" instead.
     http2 on;
     server_name slownik.example.com;
 
