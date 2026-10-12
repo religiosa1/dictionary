@@ -14,6 +14,7 @@ const (
 	maxPhraseLen      = 200
 	maxTranslationLen = 500
 	maxTagLen         = 50
+	maxNotesLen       = 2000
 )
 
 // phraseForm holds the submitted (or stored) values of the edit form.
@@ -21,6 +22,7 @@ type phraseForm struct {
 	ID          int64 // 0 for a new phrase
 	Phrase      string
 	Meanings    []store.Meaning
+	Notes       string
 	Tags        string
 	AllTags     []store.TagCount
 	Errors      []string
@@ -32,6 +34,7 @@ func formFromPhrase(phrase store.Phrase) phraseForm {
 		ID:       phrase.ID,
 		Phrase:   phrase.Phrase,
 		Meanings: phrase.Meanings,
+		Notes:    phrase.Notes,
 		Tags:     strings.Join(phrase.Tags, ", "),
 	}
 }
@@ -58,6 +61,8 @@ func parsePhraseForm(r *http.Request) (phraseForm, store.PhraseInput) {
 		return form, store.PhraseInput{}
 	}
 	form.Phrase = strings.TrimSpace(r.PostForm.Get("phrase"))
+	// Browsers submit textarea line breaks as CRLF.
+	form.Notes = strings.TrimSpace(strings.ReplaceAll(r.PostForm.Get("notes"), "\r\n", "\n"))
 	form.Tags = r.PostForm.Get("tags")
 
 	translations := r.PostForm["translation"]
@@ -91,6 +96,10 @@ func parsePhraseForm(r *http.Request) (phraseForm, store.PhraseInput) {
 		form.Errors = append(form.Errors, "Добавьте хотя бы один перевод.")
 	}
 
+	if utf8.RuneCountInString(form.Notes) > maxNotesLen {
+		form.Errors = append(form.Errors, fmt.Sprintf("Заметки длиннее %d символов.", maxNotesLen))
+	}
+
 	tags := parseTags(form.Tags)
 	for _, tag := range tags {
 		if utf8.RuneCountInString(tag) > maxTagLen {
@@ -98,7 +107,7 @@ func parsePhraseForm(r *http.Request) (phraseForm, store.PhraseInput) {
 		}
 	}
 
-	return form, store.PhraseInput{Phrase: form.Phrase, Meanings: form.Meanings, Tags: tags}
+	return form, store.PhraseInput{Phrase: form.Phrase, Meanings: form.Meanings, Notes: form.Notes, Tags: tags}
 }
 
 // splitLines returns trimmed non-empty lines.

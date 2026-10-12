@@ -70,7 +70,8 @@ func TestPhraseCRUD(t *testing.T) {
 			{Translation: "милость", Examples: []string{"Łaska boża"}},
 			{Translation: "благодать"},
 		},
-		Tags: []string{"религия", "архаизм"},
+		Notes: "Книжное.",
+		Tags:  []string{"религия", "архаизм"},
 	}, alice.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -80,7 +81,7 @@ func TestPhraseCRUD(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Phrase != "Łaska" || got.Preview() != "милость" || len(got.Meanings) != 2 {
+	if got.Phrase != "Łaska" || got.Preview() != "милость" || len(got.Meanings) != 2 || got.Notes != "Книжное." {
 		t.Errorf("unexpected phrase: %+v", got)
 	}
 	if !slices.Equal(got.Tags, []string{"архаизм", "религия"}) {
@@ -101,6 +102,9 @@ func TestPhraseCRUD(t *testing.T) {
 	got, _ = db.GetPhrase(id)
 	if got.UpdatedByName != "bob" || got.CreatedByName != "alice" {
 		t.Errorf("bad audit fields after update: %+v", got)
+	}
+	if got.Notes != "" {
+		t.Errorf("notes not cleared: %q", got.Notes)
 	}
 	tags, _ := db.ListTags()
 	if len(tags) != 1 || tags[0].Name != "религия" {

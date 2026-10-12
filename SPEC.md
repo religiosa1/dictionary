@@ -95,6 +95,7 @@ CREATE TABLE phrases (
   phrase_key  TEXT NOT NULL UNIQUE,       -- Go strings.ToLower(trimmed phrase); uniqueness
   phrase_norm TEXT NOT NULL,              -- lowercase, diacritics stripped; search only
   meanings    TEXT NOT NULL CHECK (json_valid(meanings)),
+  notes       TEXT NOT NULL DEFAULT '',   -- free-form usage notes, usually empty
   created_at  DATETIME NOT NULL,
   updated_at  DATETIME NOT NULL,
   created_by  INTEGER NOT NULL REFERENCES users(id),
@@ -303,10 +304,11 @@ hx-swap="beforeend"`. Only fragment endpoint in the app (renders the
 - **Home**: filter form (search input, tag `<select>`, "Добавил" `<select>`,
   "Изменил" `<select>`), results list: phrase → first translation, tags as
   small links. Each item links to the phrase page.
-- **Phrase page**: phrase; numbered meanings with examples; tags (links to
+- **Phrase page**: phrase; numbered meanings with examples; notes (if any,
+  line breaks kept); tags (links to
   `/?tag=`); "добавил X, 11.10.2026 · изменил Y, 12.10.2026";
   edit/delete links for editors.
-- **Form**: phrase input, meanings fieldsets, tags input. Validation errors
+- **Form**: phrase input, meanings fieldsets, notes textarea, tags input. Validation errors
   re-render the form with values kept and messages in Russian.
 - **Error pages**: 403/404/500, minimal.
 
@@ -326,6 +328,7 @@ startup.
 - `phrase`: trimmed, non-empty, ≤ 200 chars; unique by `phrase_key`.
 - Meanings: ≥ 1 with non-empty translation; translation ≤ 500 chars;
   examples: lines trimmed, blank lines dropped.
+- Notes: trimmed, CRLF → LF, ≤ 2000 chars.
 - Tags: split on `,`, trimmed, lowercased, empty dropped, deduplicated,
   each ≤ 50 chars.
 

@@ -155,6 +155,7 @@ func parseTemplates() (map[string]*template.Template, error) {
 		// Form limits, so the HTML maxlength matches server validation.
 		"maxPhraseLen":      func() int { return maxPhraseLen },
 		"maxTranslationLen": func() int { return maxTranslationLen },
+		"maxNotesLen":       func() int { return maxNotesLen },
 	}
 	layout, err := template.New("").Funcs(funcs).ParseFS(templatesFS, "templates/layout.tmpl")
 	if err != nil {

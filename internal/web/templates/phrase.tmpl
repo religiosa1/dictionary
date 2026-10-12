@@ -15,6 +15,7 @@
     </li>
     {{end}}
   </ol>
+  {{with .Notes}}<p class="notes">{{.}}</p>{{end}}
   {{if .Tags}}
   <p>{{range .Tags}}<a class="tag" href="/?tag={{.}}">{{.}}</a>{{end}}</p>
   {{end}}

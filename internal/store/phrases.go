@@ -52,6 +52,7 @@ type Phrase struct {
 	ID            int64      `db:"id"`
 	Phrase        string     `db:"phrase"`
 	Meanings      Meanings   `db:"meanings"`
+	Notes         string     `db:"notes"`
 	Tags          StringList `db:"tags"`
 	CreatedAt     time.Time  `db:"created_at"`
 	UpdatedAt     time.Time  `db:"updated_at"`
@@ -73,6 +74,7 @@ func (p Phrase) Preview() string {
 type PhraseInput struct {
 	Phrase   string
 	Meanings Meanings
+	Notes    string
 	Tags     []string
 }
 
@@ -85,7 +87,7 @@ type Filter struct {
 }
 
 const phraseSelect = `
-	SELECT p.id, p.phrase, p.meanings, p.created_at, p.updated_at, p.created_by, p.updated_by,
+	SELECT p.id, p.phrase, p.meanings, p.notes, p.created_at, p.updated_at, p.created_by, p.updated_by,
 		cu.name AS created_by_name, uu.name AS updated_by_name,
 		(SELECT json_group_array(t.name ORDER BY t.name)
 			FROM phrase_tags pt JOIN tags t ON t.id = pt.tag_id
@@ -186,11 +188,11 @@ func (db *DB) CreatePhrase(in PhraseInput, userID int64) (int64, error) {
 	err := db.inTx(func(tx *sqlx.Tx) error {
 		now := time.Now().UTC()
 		err := tx.Get(&id, `
-			INSERT INTO phrases (phrase, phrase_key, phrase_norm, meanings,
+			INSERT INTO phrases (phrase, phrase_key, phrase_norm, meanings, notes,
 				created_at, updated_at, created_by, updated_by)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 			RETURNING id`,
-			in.Phrase, Key(in.Phrase), Normalize(in.Phrase), in.Meanings,
+			in.Phrase, Key(in.Phrase), Normalize(in.Phrase), in.Meanings, in.Notes,
 			now, now, userID, userID,
 		)
 		if err != nil {
@@ -207,10 +209,10 @@ func (db *DB) CreatePhrase(in PhraseInput, userID int64) (int64, error) {
 func (db *DB) UpdatePhrase(id int64, in PhraseInput, userID int64) error {
 	err := db.inTx(func(tx *sqlx.Tx) error {
 		err := requireAffected(tx.Exec(`
-			UPDATE phrases SET phrase = ?, phrase_key = ?, phrase_norm = ?, meanings = ?,
+			UPDATE phrases SET phrase = ?, phrase_key = ?, phrase_norm = ?, meanings = ?, notes = ?,
 				updated_at = ?, updated_by = ?
 			WHERE id = ?`,
-			in.Phrase, Key(in.Phrase), Normalize(in.Phrase), in.Meanings,
+			in.Phrase, Key(in.Phrase), Normalize(in.Phrase), in.Meanings, in.Notes,
 			time.Now().UTC(), userID, id,
 		))
 		if err != nil {

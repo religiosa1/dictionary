@@ -22,6 +22,9 @@
   </div>
   <button type="button" hx-get="/meaning-row" hx-target="#meanings" hx-swap="beforeend">+ Значение</button>
 
+  <label for="notes">Заметки</label>
+  <textarea id="notes" name="notes" rows="3" maxlength="{{maxNotesLen}}">{{.Notes}}</textarea>
+
   <label for="tags">Теги, через запятую</label>
   <input id="tags" name="tags" value="{{.Tags}}">
   {{if .AllTags}}

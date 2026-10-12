@@ -234,6 +234,7 @@ func TestParsePhraseForm(t *testing.T) {
 		"phrase":      {" kot "},
 		"translation": {"кот", "", "котик"},
 		"examples":    {"Kot śpi.\n\n  Mój kot  ", "", ""},
+		"notes":       {" Pierwsza.\r\nDruga. \r\n"},
 		"tags":        {"Zwierzęta, , zwierzęta,  dom  "},
 	}
 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(form.Encode()))
@@ -248,6 +249,9 @@ func TestParsePhraseForm(t *testing.T) {
 	}
 	if got := input.Meanings[0].Examples; len(got) != 2 || got[1] != "Mój kot" {
 		t.Errorf("bad examples: %q", got)
+	}
+	if input.Notes != "Pierwsza.\nDruga." {
+		t.Errorf("bad notes: %q", input.Notes)
 	}
 	if got := strings.Join(input.Tags, "|"); got != "zwierzęta|dom" {
 		t.Errorf("bad tags: %q", got)
