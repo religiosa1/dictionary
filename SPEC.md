@@ -303,7 +303,11 @@ hx-swap="beforeend"`. Only fragment endpoint in the app (renders the
   wrapped in `lang="pl"`.
 - **Home**: filter form (search input, tag `<select>`, "Добавил" `<select>`,
   "Изменил" `<select>`), results list: phrase → first translation, tags as
-  small links. Each item links to the phrase page.
+  small links. Each item links to the phrase page. For editors, a search
+  without an exact match (by `phrase_key`, regardless of filters) shows
+  a "Добавить «query»" link above the results (its line is always
+  reserved, so live search doesn't shift the layout) → `/phrases/new?phrase=query`, which
+  prefills the phrase input.
 - **Phrase page**: phrase; numbered meanings with examples; notes (if any,
   line breaks kept); tags (links to
   `/?tag=`); "добавил X, 11.10.2026 · изменил Y, 12.10.2026";

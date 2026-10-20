@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-20
+
+### Added
+
+- "Add" button above search results for editors, when no phrase matches
+  the query exactly
+
+### Changed
+
+- Footer stays at the bottom of the viewport on short pages
+
+### Security
+
+- Go version bumped to 1.27.3
+
 ## [0.3.0] - 2026-10-12
 
 ### Added
@@ -86,7 +101,8 @@ Initial version.
 - Dev server (`cmd/devserver`) with a fake login, for local testing.
 - systemd unit, nginx and env examples; Pocket ID setup docs.
 
-[Unreleased]: https://github.com/religiosa1/dictionary/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/religiosa1/dictionary/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/religiosa1/dictionary/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/religiosa1/dictionary/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/religiosa1/dictionary/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/religiosa1/dictionary/compare/v0.1.1...v0.2.0

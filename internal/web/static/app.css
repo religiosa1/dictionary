@@ -1,7 +1,10 @@
 /* Small additions on top of simple.css. */
+body { min-height: 100dvh; grid-template-rows: auto 1fr auto; }
 .filters { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 .filters input[type="search"] { flex: 1 1 100%; }
 .filters select, .filters button { margin: 0; }
+.add-phrase { height: 1.5rem; margin: 0.75rem 0 0; font-size: 0.9em; line-height: 1.5rem; }
+.add-phrase + section { margin-top: 0.75rem; }
 .phrases { list-style: none; padding: 0; }
 .phrases li { padding: 0.4rem 0; border-bottom: 1px solid var(--border); }
 .tag { font-size: 0.8em; margin-left: 0.4em; padding: 0 0.4em; border: 1px solid var(--border); border-radius: 4px; text-decoration: none; }

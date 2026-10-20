@@ -178,6 +178,27 @@ func TestEditFormHasNoBlankMeaning(t *testing.T) {
 	}
 }
 
+func TestAddButtonWithoutExactMatch(t *testing.T) {
+	app := newTestApp(t, true)
+	editor := app.login(t, "Ala", store.RoleEditor)
+	reader := app.login(t, "Ola", store.RoleReader)
+	app.post("/phrases", phraseValues("łaska", "милость"), editor)
+
+	const addLink = `href="/phrases/new?phrase=laska"`
+	if body := app.get("/?q=laska", editor).Body.String(); !strings.Contains(body, addLink) {
+		t.Errorf("editor should see the add link when there's no exact match")
+	}
+	if body := app.get("/?q=laska", reader).Body.String(); strings.Contains(body, addLink) {
+		t.Errorf("reader shouldn't see the add link")
+	}
+	if body := app.get("/?q=%C5%81aska", editor).Body.String(); strings.Contains(body, "/phrases/new?phrase=") {
+		t.Errorf("add link shown despite an exact match")
+	}
+	if body := app.get("/phrases/new?phrase=laska", editor).Body.String(); !strings.Contains(body, `value="laska"`) {
+		t.Errorf("new form should be prefilled with the phrase")
+	}
+}
+
 func TestFiltersOpenWhenActive(t *testing.T) {
 	app := newTestApp(t, true)
 	if body := app.get("/", nil).Body.String(); strings.Contains(body, `class="filter-selects" open`) {

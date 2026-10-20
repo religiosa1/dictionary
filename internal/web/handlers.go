@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/religiosa1/dictionary/internal/auth"
 	"github.com/religiosa1/dictionary/internal/store"
@@ -18,6 +19,9 @@ type homePage struct {
 	Users   []store.User
 	PrevURL string
 	NextURL string
+	// AddURL links to the new phrase form, prefilled with the query, when an
+	// editor searched for a phrase that doesn't exist yet.
+	AddURL string
 }
 
 // IsRecent tells whether it's the default "recently added" view.
@@ -62,6 +66,17 @@ func (s *Server) home(w http.ResponseWriter, r *http.Request) {
 	}
 	if hasMore {
 		page.NextURL = pageURL(query, filter.Page+1)
+	}
+	if store.Normalize(filter.Query) != "" && auth.UserFrom(r.Context()).IsEditor() {
+		// Exact lookup, as the match may be filtered out or on another page.
+		_, err := s.db.PhraseIDByText(filter.Query)
+		switch {
+		case errors.Is(err, store.ErrNotFound):
+			page.AddURL = "/phrases/new?" + url.Values{"phrase": {filter.Query}}.Encode()
+		case err != nil:
+			s.serverError(w, r, err)
+			return
+		}
 	}
 	s.renderPage(w, r, http.StatusOK, "home", page)
 }
@@ -137,7 +152,8 @@ func (s *Server) showPhrase(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) newPhrase(w http.ResponseWriter, r *http.Request) {
-	s.renderForm(w, r, http.StatusOK, phraseForm{})
+	phrase := truncate(strings.TrimSpace(r.URL.Query().Get("phrase")), maxPhraseLen)
+	s.renderForm(w, r, http.StatusOK, phraseForm{Phrase: phrase})
 }
 
 func (s *Server) editPhrase(w http.ResponseWriter, r *http.Request) {
